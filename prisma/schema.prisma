@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Job {
+  id              String           @id @default(cuid())
+  cmcUrl          String
+  coinSlug        String?
+  status          String           @default("queued")
+  currentStage    String?
+  errorMessage    String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  stageRuns       JobStageRun[]
+  articleVariants ArticleVariant[]
+  selectedArticle SelectedArticle?
+  publishResult   PublishResult?
+
+  @@index([status])
+  @@index([coinSlug])
+}
+
+model JobStageRun {
+  id           String   @id @default(cuid())
+  jobId        String
+  stage        String
+  status       String   @default("pending")
+  attempt      Int      @default(1)
+  input        Json?
+  output       Json?
+  errorMessage String?
+  startedAt    DateTime?
+  finishedAt   DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  job          Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId, stage])
+  @@index([status])
+}
+
+model ArticleVariant {
+  id              String           @id @default(cuid())
+  jobId           String
+  variantNo       Int
+  title           String
+  body            String
+  metaDescription String?
+  thumbnailPrompt String?
+  scoreJson       Json?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  job             Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  selected        SelectedArticle?
+
+  @@index([jobId])
+  @@unique([jobId, variantNo])
+}
+
+model SelectedArticle {
+  id               String         @id @default(cuid())
+  jobId            String         @unique
+  articleVariantId String         @unique
+  variantNo        Int
+  bestAngle        String?
+  whyBest          String?
+  banRiskSummary   String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  job              Job            @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  articleVariant   ArticleVariant @relation(fields: [articleVariantId], references: [id], onDelete: Cascade)
+
+  @@index([articleVariantId])
+}
+
+model PublishResult {
+  id                String   @id @default(cuid())
+  jobId             String   @unique
+  wordpressPostId   String?
+  wordpressUrl      String?
+  sheetRowId        String?
+  telegramMessageId String?
+  publishedAt       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  job               Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([wordpressPostId])
+}
