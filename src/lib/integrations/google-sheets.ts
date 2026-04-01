@@ -5,9 +5,11 @@ import { isMockMode, requireLiveEnv } from "@/lib/integrations/mode";
 type SheetsLogInput = {
   coinSlug: string;
   cmcUrl: string;
+  variantNo: number;
   title: string;
   wordpressUrl: string;
   status: string;
+  scheduledAt?: string | null;
 };
 
 function normalizePrivateKey(privateKey: string) {
@@ -57,7 +59,7 @@ export async function appendGoogleSheetsLog(input: SheetsLogInput): Promise<{ sh
     throw new Error("Google Sheets access token could not be acquired.");
   }
 
-  const range = `${worksheetName}!A:F`;
+  const range = `${worksheetName}!A:H`;
   const response = await fetch(
     `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED`,
     {
@@ -71,9 +73,11 @@ export async function appendGoogleSheetsLog(input: SheetsLogInput): Promise<{ sh
           [
             input.coinSlug,
             input.cmcUrl,
+            String(input.variantNo),
             input.title,
             input.wordpressUrl,
             input.status,
+            input.scheduledAt ?? "",
             getTimestamp(),
           ],
         ],

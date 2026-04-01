@@ -4,6 +4,8 @@ type PublishDraftInput = {
   title: string;
   body: string;
   metaDescription: string | null;
+  status: "draft" | "publish" | "future";
+  scheduledAt: string | null;
 };
 
 type PublishDraftResult = {
@@ -11,7 +13,7 @@ type PublishDraftResult = {
   wordpressUrl: string;
 };
 
-export async function createWordPressDraft(input: PublishDraftInput): Promise<PublishDraftResult> {
+export async function createWordPressPost(input: PublishDraftInput): Promise<PublishDraftResult> {
   if (isMockMode()) {
     return {
       wordpressPostId: "mock-draft",
@@ -33,8 +35,9 @@ export async function createWordPressDraft(input: PublishDraftInput): Promise<Pu
     body: JSON.stringify({
       title: input.title,
       content: input.body,
-      status: "draft",
+      status: input.status,
       excerpt: input.metaDescription,
+      ...(input.scheduledAt ? { date_gmt: input.scheduledAt } : {}),
     }),
   });
 
@@ -48,4 +51,12 @@ export async function createWordPressDraft(input: PublishDraftInput): Promise<Pu
     wordpressPostId: String(payload.id),
     wordpressUrl: payload.link,
   };
+}
+
+export async function createWordPressDraft(input: Omit<PublishDraftInput, "status" | "scheduledAt">) {
+  return createWordPressPost({
+    ...input,
+    status: "draft",
+    scheduledAt: null,
+  });
 }

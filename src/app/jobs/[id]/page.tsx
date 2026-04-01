@@ -15,6 +15,15 @@ type JobDetailPayload = {
       sheetRowId: string | null;
       telegramMessageId: string | null;
     } | null;
+    publishedPosts: Array<{
+      variantNo: number;
+      publishOrder: number;
+      wordpressPostId: string | null;
+      wordpressUrl: string | null;
+      publishStatus: string;
+      scheduledAt: string | null;
+      sheetRowId: string | null;
+    }>;
     selectedArticle: {
       variantNo: number;
       bestAngle: string | null;
@@ -71,6 +80,15 @@ export default async function JobDetailPage({
               telegramMessageId: dbJob.publishResult.telegramMessageId,
             }
           : null,
+        publishedPosts: dbJob.publishedPosts.map((post) => ({
+          variantNo: post.variantNo,
+          publishOrder: post.publishOrder,
+          wordpressPostId: post.wordpressPostId,
+          wordpressUrl: post.wordpressUrl,
+          publishStatus: post.publishStatus,
+          scheduledAt: post.scheduledAt?.toISOString() ?? null,
+          sheetRowId: post.sheetRowId,
+        })),
         stageRuns: dbJob.stageRuns.map((stageRun) => ({
           id: stageRun.id,
           stage: stageRun.stage,
@@ -174,11 +192,11 @@ export default async function JobDetailPage({
           <div className="mt-4 grid gap-4 md:grid-cols-3">
             <div className="rounded-2xl bg-zinc-50 p-4">
               <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
-                WordPress Draft
+                Primary WordPress Post
               </p>
               {job.publishResult?.wordpressUrl ? (
                 <a className="mt-2 block text-sm text-zinc-900 underline" href={job.publishResult.wordpressUrl}>
-                  Open draft
+                  Open published post
                 </a>
               ) : (
                 <p className="mt-2 text-sm text-zinc-600">Not published yet.</p>
@@ -198,6 +216,35 @@ export default async function JobDetailPage({
                 {job.publishResult?.telegramMessageId ?? "-"}
               </p>
             </div>
+          </div>
+        </section>
+
+        <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-zinc-950">Publication Queue</h2>
+          <div className="mt-4 space-y-3">
+            {job.publishedPosts.length ? (
+              job.publishedPosts.map((post) => (
+                <div
+                  key={`${post.variantNo}-${post.publishOrder}`}
+                  className="rounded-2xl border border-black/10 bg-zinc-50 p-4"
+                >
+                  <p className="text-sm font-medium text-zinc-900">
+                    Variant {post.variantNo} · {post.publishStatus}
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-600">
+                    {post.scheduledAt ? `Scheduled at ${post.scheduledAt}` : "Published immediately"}
+                  </p>
+                  {post.wordpressUrl ? (
+                    <a className="mt-2 block text-sm text-zinc-900 underline" href={post.wordpressUrl}>
+                      Open post
+                    </a>
+                  ) : null}
+                  <p className="mt-2 text-xs text-zinc-600">Sheet row: {post.sheetRowId ?? "-"}</p>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-zinc-600">No WordPress posts created yet.</p>
+            )}
           </div>
         </section>
       </div>

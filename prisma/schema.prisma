@@ -20,6 +20,7 @@ model Job {
   articleVariants ArticleVariant[]
   selectedArticle SelectedArticle?
   publishResult   PublishResult?
+  publishedPosts  PublishedPost[]
 
   @@index([status])
   @@index([coinSlug])
@@ -57,6 +58,7 @@ model ArticleVariant {
   updatedAt       DateTime         @updatedAt
   job             Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
   selected        SelectedArticle?
+  publishedPosts  PublishedPost[]
 
   @@index([jobId])
   @@unique([jobId, variantNo])
@@ -91,4 +93,24 @@ model PublishResult {
   job               Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
   @@index([wordpressPostId])
+}
+
+model PublishedPost {
+  id               String         @id @default(cuid())
+  jobId            String
+  articleVariantId String
+  variantNo       Int
+  publishOrder    Int
+  wordpressPostId String?
+  wordpressUrl    String?
+  publishStatus   String
+  scheduledAt     DateTime?
+  sheetRowId      String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  job             Job            @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  articleVariant  ArticleVariant @relation(fields: [articleVariantId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, variantNo])
+  @@index([jobId, publishOrder])
 }

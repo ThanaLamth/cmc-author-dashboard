@@ -47,7 +47,7 @@ describe("appendGoogleSheetsLog", () => {
       ok: true,
       json: async () => ({
         updates: {
-          updatedRange: "Drafts!A2:F2",
+          updatedRange: "Drafts!A2:H2",
         },
       }),
     });
@@ -57,9 +57,11 @@ describe("appendGoogleSheetsLog", () => {
     const result = await appendGoogleSheetsLog({
       coinSlug: "anome",
       cmcUrl: "https://coinmarketcap.com/currencies/anome/",
+      variantNo: 2,
       title: "Anome draft title",
       wordpressUrl: "https://example.com/draft/1",
-      status: "draft_created",
+      status: "future",
+      scheduledAt: "2026-04-02T00:00:00Z",
     });
 
     expect(jwtConstructorMock).toHaveBeenCalledWith(
@@ -71,7 +73,7 @@ describe("appendGoogleSheetsLog", () => {
     );
     expect(getAccessTokenMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://sheets.googleapis.com/v4/spreadsheets/spreadsheet-123/values/Drafts!A%3AF:append?valueInputOption=USER_ENTERED",
+      "https://sheets.googleapis.com/v4/spreadsheets/spreadsheet-123/values/Drafts!A%3AH:append?valueInputOption=USER_ENTERED",
       expect.objectContaining({
         method: "POST",
         headers: expect.objectContaining({
@@ -86,11 +88,13 @@ describe("appendGoogleSheetsLog", () => {
     expect(body.values[0]).toEqual([
       "anome",
       "https://coinmarketcap.com/currencies/anome/",
+      "2",
       "Anome draft title",
       "https://example.com/draft/1",
-      "draft_created",
+      "future",
+      "2026-04-02T00:00:00Z",
       expect.any(String),
     ]);
-    expect(result).toEqual({ sheetRowId: "Drafts!A2:F2" });
+    expect(result).toEqual({ sheetRowId: "Drafts!A2:H2" });
   });
 });

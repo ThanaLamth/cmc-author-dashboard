@@ -1,12 +1,13 @@
 # CMC Author Dashboard
 
 `v1` internal dashboard for turning a CoinMarketCap coin page URL into a crafted article workflow:
-- create three variants
+- create four variants
 - auto-select the best variant
 - generate SEO support assets
-- create a WordPress draft
-- append a Google Sheets log row
-- notify Telegram
+- publish one WordPress post immediately
+- schedule three additional WordPress posts
+- append all created posts to Google Sheets
+- notify Telegram with the publish queue
 
 ## Version Scope
 
@@ -15,10 +16,12 @@
 Current scope:
 - submit a CoinMarketCap coin page URL
 - run the craft pipeline through `codex exec`
-- choose the best of three generated variants
-- create a WordPress draft
-- log the run to Google Sheets
-- send a Telegram notification that the draft was created
+- generate four materially different article variants
+- choose the best variant for immediate publication
+- publish one post immediately
+- schedule the remaining three posts at `+6h`, `+12h`, and `+24h`
+- log all created WordPress posts to Google Sheets
+- send a Telegram notification with the full publish queue
 
 ### `v2` planned
 
@@ -119,7 +122,11 @@ When you press `Craft` in the web app:
 - the prompt explicitly tells Codex to use `top-cmc-writer`
 - Codex returns strict JSON
 - each variant includes `body_html`, so the selected article can be pushed to WordPress directly
-- the app parses that JSON, stores the variants, then continues WordPress, Google Sheets, and Telegram steps
+- the app parses that JSON, stores the variants, then:
+  - publishes the best variant immediately
+  - schedules the remaining three variants
+  - logs every created WordPress post to Google Sheets
+  - sends a Telegram summary of the full queue
 
 ## Integration Modes
 

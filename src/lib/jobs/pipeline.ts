@@ -2,8 +2,9 @@ import { db } from "@/lib/db";
 import { craftFromCoinPage } from "@/lib/integrations/top-cmc-writer";
 import { appendGoogleSheetsLog } from "@/lib/integrations/google-sheets";
 import { sendTelegramNotification } from "@/lib/integrations/telegram";
-import { createWordPressDraft } from "@/lib/integrations/wordpress";
+import { createWordPressPost } from "@/lib/integrations/wordpress";
 import { JOB_STAGES, type JobStage } from "@/lib/jobs/constants";
+import { buildPublicationSchedule, buildPublishQueue } from "@/lib/jobs/publishing-plan";
 import { runStage } from "@/lib/jobs/stage-runner";
 
 type PipelineSelectedVariant = {
@@ -27,7 +28,7 @@ function getStartIndex(currentStage: string | null) {
 }
 
 async function loadPersistedContext(jobId: string) {
-  const [selectedArticle, publishRecord] = await Promise.all([
+  const [selectedArticle, publishRecord, publishedPosts] = await Promise.all([
     db.selectedArticle.findUnique({
       where: { jobId },
       include: {
@@ -37,9 +38,26 @@ async function loadPersistedContext(jobId: string) {
     db.publishResult.findUnique({
       where: { jobId },
     }),
+    db.publishedPost.findMany({
+      where: { jobId },
+      include: {
+        articleVariant: true,
+      },
+      orderBy: [{ publishOrder: "asc" }],
+    }),
   ]);
 
   return {
+    publishedPosts: publishedPosts.map((post) => ({
+      variantNo: post.variantNo,
+      publishOrder: post.publishOrder,
+      title: post.articleVariant.title,
+      wordpressPostId: post.wordpressPostId,
+      wordpressUrl: post.wordpressUrl,
+      publishStatus: post.publishStatus as "publish" | "future",
+      scheduledAt: post.scheduledAt?.toISOString().replace(".000Z", "Z") ?? null,
+      sheetRowId: post.sheetRowId,
+    })),
     publishResult: publishRecord
       ? {
           wordpressPostId: publishRecord.wordpressPostId,
@@ -89,8 +107,17 @@ export async function runJobPipeline(jobId: string) {
         telegramMessageId?: string | null;
       }
     | null = null;
-  let sheetsResult:
-    | Awaited<ReturnType<typeof appendGoogleSheetsLog>>
+  let publishedPosts:
+    | Array<{
+        variantNo: number;
+        publishOrder: number;
+        title: string;
+        wordpressPostId: string | null;
+        wordpressUrl: string | null;
+        publishStatus: "publish" | "future";
+        scheduledAt: string | null;
+        sheetRowId?: string | null;
+      }>
     | null = null;
 
   const persistedContext =
@@ -98,6 +125,7 @@ export async function runJobPipeline(jobId: string) {
 
   selectedVariant = persistedContext?.selectedVariant ?? null;
   publishResult = persistedContext?.publishResult ?? null;
+  publishedPosts = persistedContext?.publishedPosts ?? null;
 
   await db.job.update({
     where: { id: jobId },
@@ -240,31 +268,109 @@ export async function runJobPipeline(jobId: string) {
       }
 
       if (stage === "wordpress_publish") {
-        const currentCraftResult = craftResult;
-        selectedVariant ??=
-          currentCraftResult?.variants.find(
-            (variant) => variant.variantNo === currentCraftResult.selectedVariantNo,
-          ) ?? null;
-        selectedVariant ??= (await loadPersistedContext(jobId)).selectedVariant;
+        craftResult ??= await craftFromCoinPage(job.cmcUrl, job.coinSlug ?? "unknown");
+        const publishQueue = buildPublishQueue(craftResult.variants, craftResult.selectedVariantNo);
+        const schedule = buildPublicationSchedule(new Date());
 
-        if (!selectedVariant) {
-          throw new Error("Cannot publish without a selected article.");
-        }
-
-        const publishVariant = selectedVariant;
-
-        publishResult = await runStage({
+        const publishStageResult = await runStage({
           jobId,
           stage,
           attempt,
-          input: { title: publishVariant.title },
-          work: async () =>
-            createWordPressDraft({
-              title: publishVariant.title,
-              body: publishVariant.body,
-              metaDescription: publishVariant.metaDescription,
-            }),
+          input: { variantCount: publishQueue.length },
+          work: async () => {
+            const existingPosts = await db.publishedPost.findMany({
+              where: { jobId },
+            });
+
+            const published = [];
+            for (const [index, variant] of publishQueue.entries()) {
+              const existing = existingPosts.find((post) => post.variantNo === variant.variantNo);
+
+              if (existing?.wordpressPostId && existing.wordpressUrl) {
+                published.push({
+                  variantNo: variant.variantNo,
+                  publishOrder: index,
+                  title: variant.title,
+                  wordpressPostId: existing.wordpressPostId,
+                  wordpressUrl: existing.wordpressUrl,
+                  publishStatus: existing.publishStatus as "publish" | "future",
+                  scheduledAt: existing.scheduledAt?.toISOString().replace(".000Z", "Z") ?? null,
+                  sheetRowId: existing.sheetRowId,
+                });
+                continue;
+              }
+
+              const slot = schedule[index];
+              const wpPost = await createWordPressPost({
+                title: variant.title,
+                body: variant.body,
+                metaDescription: variant.metaDescription,
+                status: slot?.status ?? "future",
+                scheduledAt: slot?.scheduledAt ?? null,
+              });
+
+              const saved = await db.publishedPost.upsert({
+                where: {
+                  jobId_variantNo: {
+                    jobId,
+                    variantNo: variant.variantNo,
+                  },
+                },
+                update: {
+                  articleVariantId: (
+                    await db.articleVariant.findFirstOrThrow({
+                      where: { jobId, variantNo: variant.variantNo },
+                    })
+                  ).id,
+                  publishOrder: index,
+                  wordpressPostId: wpPost.wordpressPostId,
+                  wordpressUrl: wpPost.wordpressUrl,
+                  publishStatus: slot?.status ?? "future",
+                  scheduledAt: slot?.scheduledAt ? new Date(slot.scheduledAt) : null,
+                },
+                create: {
+                  jobId,
+                  articleVariantId: (
+                    await db.articleVariant.findFirstOrThrow({
+                      where: { jobId, variantNo: variant.variantNo },
+                    })
+                  ).id,
+                  variantNo: variant.variantNo,
+                  publishOrder: index,
+                  wordpressPostId: wpPost.wordpressPostId,
+                  wordpressUrl: wpPost.wordpressUrl,
+                  publishStatus: slot?.status ?? "future",
+                  scheduledAt: slot?.scheduledAt ? new Date(slot.scheduledAt) : null,
+                },
+              });
+
+              published.push({
+                variantNo: variant.variantNo,
+                publishOrder: index,
+                title: variant.title,
+                wordpressPostId: wpPost.wordpressPostId,
+                wordpressUrl: wpPost.wordpressUrl,
+                publishStatus: saved.publishStatus as "publish" | "future",
+                scheduledAt: saved.scheduledAt?.toISOString().replace(".000Z", "Z") ?? null,
+                sheetRowId: saved.sheetRowId,
+              });
+            }
+
+            return published;
+          },
         });
+
+        publishedPosts = publishStageResult;
+        const primaryPost = publishStageResult[0];
+
+        if (!primaryPost) {
+          throw new Error("No WordPress post was created.");
+        }
+
+        publishResult = {
+          wordpressPostId: primaryPost.wordpressPostId,
+          wordpressUrl: primaryPost.wordpressUrl,
+        };
 
         await db.publishResult.upsert({
           where: { jobId },
@@ -277,87 +383,126 @@ export async function runJobPipeline(jobId: string) {
       }
 
       if (stage === "sheets_log") {
-        const currentCraftResult = craftResult;
-        selectedVariant ??=
-          currentCraftResult?.variants.find(
-            (variant) => variant.variantNo === currentCraftResult.selectedVariantNo,
-          ) ?? null;
         const persisted = await loadPersistedContext(jobId);
-        selectedVariant ??= persisted.selectedVariant;
         publishResult ??= persisted.publishResult;
+        publishedPosts ??= persisted.publishedPosts.map((post) => ({
+          ...post,
+          title:
+            craftResult?.variants.find((variant) => variant.variantNo === post.variantNo)?.title ?? "",
+        }));
 
-        if (!selectedVariant || !publishResult?.wordpressUrl) {
-          throw new Error("Cannot log to Google Sheets before a WordPress draft exists.");
+        if (!publishedPosts.length) {
+          throw new Error("Cannot log to Google Sheets before WordPress posts exist.");
         }
 
-        const selectedForSheets = selectedVariant;
-        const publishForSheets = publishResult;
-        const sheetsWordPressUrl = publishForSheets.wordpressUrl;
-
-        if (!sheetsWordPressUrl) {
-          throw new Error("Cannot log to Google Sheets before a WordPress draft exists.");
-        }
-
-        sheetsResult = await runStage({
+        const sheetsStageResult = await runStage({
           jobId,
           stage,
           attempt,
-          input: { wordpressUrl: sheetsWordPressUrl },
-          work: async () =>
-            appendGoogleSheetsLog({
-              coinSlug: job.coinSlug ?? "unknown",
-              cmcUrl: job.cmcUrl,
-              title: selectedForSheets.title,
-              wordpressUrl: sheetsWordPressUrl,
-              status: "draft_created",
-            }),
+          input: { postCount: publishedPosts.length },
+          work: async () => {
+            const variantsByNo = new Map(
+              (
+                craftResult?.variants ??
+                (await db.articleVariant.findMany({ where: { jobId } })).map((variant) => ({
+                  variantNo: variant.variantNo,
+                  title: variant.title,
+                }))
+              ).map((variant) => [variant.variantNo, variant]),
+            );
+
+            const logged = [];
+            for (const post of publishedPosts ?? []) {
+              if (!post.wordpressUrl) {
+                continue;
+              }
+
+              const row = await appendGoogleSheetsLog({
+                coinSlug: job.coinSlug ?? "unknown",
+                cmcUrl: job.cmcUrl,
+                variantNo: post.variantNo,
+                title: variantsByNo.get(post.variantNo)?.title ?? post.title,
+                wordpressUrl: post.wordpressUrl,
+                status: post.publishStatus,
+                scheduledAt: post.scheduledAt,
+              });
+
+              await db.publishedPost.update({
+                where: {
+                  jobId_variantNo: {
+                    jobId,
+                    variantNo: post.variantNo,
+                  },
+                },
+                data: {
+                  sheetRowId: row.sheetRowId,
+                },
+              });
+
+              logged.push({
+                ...post,
+                title: variantsByNo.get(post.variantNo)?.title ?? post.title,
+                sheetRowId: row.sheetRowId,
+              });
+            }
+
+            return logged;
+          },
         });
 
-        await db.publishResult.upsert({
-          where: { jobId },
-          update: {
-            sheetRowId: sheetsResult.sheetRowId,
-          },
-          create: {
-            jobId,
-            sheetRowId: sheetsResult.sheetRowId,
-          },
-        });
+        publishedPosts = sheetsStageResult;
+        const primaryLoggedPost = sheetsStageResult[0];
+        if (primaryLoggedPost?.sheetRowId) {
+          await db.publishResult.upsert({
+            where: { jobId },
+            update: {
+              sheetRowId: primaryLoggedPost.sheetRowId,
+            },
+            create: {
+              jobId,
+              sheetRowId: primaryLoggedPost.sheetRowId,
+            },
+          });
+        }
       }
 
       if (stage === "telegram_notify") {
-        const currentCraftResult = craftResult;
-        selectedVariant ??=
-          currentCraftResult?.variants.find(
-            (variant) => variant.variantNo === currentCraftResult.selectedVariantNo,
-          ) ?? null;
         const persisted = await loadPersistedContext(jobId);
-        selectedVariant ??= persisted.selectedVariant;
         publishResult ??= persisted.publishResult;
+        publishedPosts ??= persisted.publishedPosts.map((post) => ({
+          ...post,
+          title:
+            craftResult?.variants.find((variant) => variant.variantNo === post.variantNo)?.title ?? "",
+        }));
 
-        if (!selectedVariant || !publishResult?.wordpressUrl) {
-          throw new Error("Cannot notify Telegram before a WordPress draft exists.");
+        if (!publishedPosts.length) {
+          throw new Error("Cannot notify Telegram before WordPress posts exist.");
         }
 
-        const selectedForTelegram = selectedVariant;
-        const publishForTelegram = publishResult;
-        const telegramWordPressUrl = publishForTelegram.wordpressUrl;
+        const telegramItems = publishedPosts
+          .filter((post) => Boolean(post.wordpressUrl))
+          .map((post) => ({
+            variantNo: post.variantNo,
+            title: post.title,
+            wordpressUrl: post.wordpressUrl!,
+            status: post.publishStatus,
+            scheduledAt: post.scheduledAt,
+          }));
 
-        if (!telegramWordPressUrl) {
-          throw new Error("Cannot notify Telegram before a WordPress draft exists.");
+        if (!telegramItems.length) {
+          throw new Error("Cannot notify Telegram before WordPress post URLs exist.");
         }
 
         const telegramResult = await runStage({
           jobId,
           stage,
           attempt,
-          input: { wordpressUrl: telegramWordPressUrl },
+          input: { postCount: telegramItems.length },
           work: async () =>
             sendTelegramNotification({
               coinSlug: job.coinSlug ?? "unknown",
-              title: selectedForTelegram.title,
-              wordpressUrl: telegramWordPressUrl,
               jobId,
+              items: telegramItems,
             }),
         });
 

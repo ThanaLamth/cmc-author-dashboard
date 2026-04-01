@@ -2,9 +2,14 @@ import { isMockMode, requireLiveEnv } from "@/lib/integrations/mode";
 
 type TelegramInput = {
   coinSlug: string;
-  title: string;
-  wordpressUrl: string;
   jobId: string;
+  items: Array<{
+    variantNo: number;
+    title: string;
+    wordpressUrl: string;
+    status: string;
+    scheduledAt: string | null;
+  }>;
 };
 
 export async function sendTelegramNotification(
@@ -18,12 +23,17 @@ export async function sendTelegramNotification(
   const chatId = requireLiveEnv("TELEGRAM_CHAT_ID", process.env.TELEGRAM_CHAT_ID);
 
   const text = [
-    "CMC draft created",
+    "CMC publish queue created",
     `Coin: ${input.coinSlug}`,
-    `Title: ${input.title}`,
     `Job: ${input.jobId}`,
-    `Draft: ${input.wordpressUrl}`,
-  ].join("\n");
+    ...input.items.map((item) =>
+      [
+        `Variant ${item.variantNo}: ${item.title}`,
+        `Status: ${item.status}${item.scheduledAt ? ` at ${item.scheduledAt}` : ""}`,
+        `URL: ${item.wordpressUrl}`,
+      ].join("\n"),
+    ),
+  ].join("\n\n");
 
   const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: "POST",

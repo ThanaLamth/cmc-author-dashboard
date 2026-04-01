@@ -18,6 +18,9 @@ export async function getJobById(id: string) {
       articleVariants: {
         orderBy: [{ variantNo: "asc" }],
       },
+      publishedPosts: {
+        orderBy: [{ publishOrder: "asc" }],
+      },
       selectedArticle: true,
       publishResult: true,
     },

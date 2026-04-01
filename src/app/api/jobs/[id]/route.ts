@@ -33,6 +33,15 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
             telegramMessageId: job.publishResult.telegramMessageId,
           }
         : null,
+      publishedPosts: job.publishedPosts.map((post) => ({
+        variantNo: post.variantNo,
+        publishOrder: post.publishOrder,
+        wordpressPostId: post.wordpressPostId,
+        wordpressUrl: post.wordpressUrl,
+        publishStatus: post.publishStatus,
+        scheduledAt: post.scheduledAt?.toISOString() ?? null,
+        sheetRowId: post.sheetRowId,
+      })),
       stageRuns: job.stageRuns.map((stageRun) => ({
         id: stageRun.id,
         stage: stageRun.stage,
