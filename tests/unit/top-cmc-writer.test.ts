@@ -140,4 +140,57 @@ describe("craftFromCoinPage", () => {
       banRiskSummary: "Low risk",
     });
   });
+
+  it("rejects craft output when the article body contains a coinmarketcap URL", async () => {
+    execFileMock.mockImplementation(
+      (
+        _file: string,
+        _args: string[],
+        _options: unknown,
+        callback: (error: Error | null, stdout: string, stderr: string) => void,
+      ) => {
+        callback(
+          null,
+          JSON.stringify({
+            variants: [
+              {
+                variant_no: 1,
+                title: "Variant one",
+                body_html:
+                  '<p>Source: <a href="https://coinmarketcap.com/currencies/anome/">CMC</a></p>',
+                meta_description: "Meta one",
+                thumbnail_prompt: "Thumb one",
+                source_count: 3,
+              },
+              {
+                variant_no: 2,
+                title: "Variant two",
+                body_html: "<p>Body two</p>",
+                meta_description: "Meta two",
+                thumbnail_prompt: "Thumb two",
+                source_count: 4,
+              },
+              {
+                variant_no: 3,
+                title: "Variant three",
+                body_html: "<p>Body three</p>",
+                meta_description: "Meta three",
+                thumbnail_prompt: "Thumb three",
+                source_count: 2,
+              },
+            ],
+            selected_variant_no: 2,
+            best_angle: "Utility with external proof",
+            why_best: "Best fit for ranking and publish safety.",
+            ban_risk_summary: "Low risk",
+          }),
+          "",
+        );
+      },
+    );
+
+    await expect(
+      craftFromCoinPage("https://coinmarketcap.com/currencies/anome/", "anome"),
+    ).rejects.toThrow("coinmarketcap URLs are not allowed in article output");
+  });
 });

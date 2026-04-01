@@ -118,6 +118,8 @@ function buildCodexPrompt(cmcUrl: string, coinSlug: string) {
     "You are writing for the CMC Author Dashboard craft pipeline.",
     "Analyze the provided CoinMarketCap coin page URL the same way an operator would in Codex.",
     "Use only non-CoinMarketCap sources for factual support in the article output.",
+    "Do not include any source URL, citation, or hyperlink containing the string coinmarketcap anywhere in body_html.",
+    "Do not default to bearish, negative, bullish, or promotional framing. Optimize for pattern-fit, source strength, and publish safety.",
     "Return exactly three variants.",
     "Every variant body_html must be ready to paste directly into WordPress.",
     "Keep the output publish-safe and compliant with CoinMarketCap community rules.",
@@ -172,7 +174,7 @@ function buildOutputSchema() {
 }
 
 function toInternalCraftResult(raw: z.infer<typeof codexCraftResultSchema>): CraftResult {
-  return craftResultSchema.parse({
+  const parsed = craftResultSchema.parse({
     variants: raw.variants.map((variant) => ({
       variantNo: variant.variant_no,
       title: variant.title,
@@ -186,6 +188,14 @@ function toInternalCraftResult(raw: z.infer<typeof codexCraftResultSchema>): Cra
     whyBest: raw.why_best,
     banRiskSummary: raw.ban_risk_summary,
   });
+
+  for (const variant of parsed.variants) {
+    if (variant.body.toLowerCase().includes("coinmarketcap")) {
+      throw new Error("coinmarketcap URLs are not allowed in article output");
+    }
+  }
+
+  return parsed;
 }
 
 async function craftLiveWithCodexExec(cmcUrl: string, coinSlug: string): Promise<CraftResult> {
