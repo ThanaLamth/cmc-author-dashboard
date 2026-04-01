@@ -1,8 +1,30 @@
+import { execFile } from "node:child_process";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+
 import { z } from "zod";
 
 import { summarizeBanRisk } from "@/lib/jobs/ban-risk";
-import { isMockMode, requireLiveEnv } from "@/lib/integrations/mode";
+import { isMockMode } from "@/lib/integrations/mode";
 import { pickBestVariant, scoreVariant } from "@/lib/jobs/scoring";
+
+const codexVariantSchema = z.object({
+  variant_no: z.number().int().positive(),
+  title: z.string().min(1),
+  body_html: z.string().min(1),
+  meta_description: z.string().min(1),
+  thumbnail_prompt: z.string().min(1),
+  source_count: z.number().int().nonnegative(),
+});
+
+const codexCraftResultSchema = z.object({
+  variants: z.array(codexVariantSchema).length(3),
+  selected_variant_no: z.number().int().positive(),
+  best_angle: z.string().min(1),
+  why_best: z.string().min(1),
+  ban_risk_summary: z.string().min(1),
+});
 
 const craftVariantSchema = z.object({
   variantNo: z.number().int().positive(),
@@ -22,17 +44,6 @@ const craftResultSchema = z.object({
 });
 
 export type CraftResult = z.infer<typeof craftResultSchema>;
-
-type OpenAIResponsesPayload = {
-  output?: Array<{
-    content?: Array<{
-      text?: string;
-      type?: string;
-    }>;
-    type?: string;
-  }>;
-  output_text?: string;
-};
 
 function toHeadline(coinSlug: string, variantNo: number) {
   const readable = coinSlug
@@ -61,7 +72,9 @@ function toBody(coinSlug: string, variantNo: number) {
     "utility, structure, and what users should watch next",
   ];
 
-  return `${readable} is being evaluated through the lens of ${angles[variantNo - 1] ?? angles[0]}. This draft is a placeholder craft result for the dashboard MVP. Replace the adapter with the full top-cmc-writer orchestration to generate production-grade article research, source-backed analysis, and platform-safe copy.\n\nFor the current MVP, the worker produces three variants, scores them, and selects the strongest option for publishing workflow tests. The final production integration should preserve non-CMC sourcing rules, ban-risk checks, and CoinMarketCap-safe tone controls.`;
+  return `<p>${readable} is being evaluated through the lens of ${
+    angles[variantNo - 1] ?? angles[0]
+  }.</p><p>This draft is a placeholder craft result for the dashboard MVP. Replace the adapter with the full top-cmc-writer orchestration to generate production-grade article research, source-backed analysis, and platform-safe copy.</p><p>For the current MVP, the worker produces three variants, scores them, and selects the strongest option for publishing workflow tests. The final production integration should preserve non-CMC sourcing rules, ban-risk checks, and CoinMarketCap-safe tone controls.</p>`;
 }
 
 function toMetaDescription(coinSlug: string, variantNo: number) {
@@ -99,108 +112,146 @@ function toMockResult(coinSlug: string): CraftResult {
   };
 }
 
-function extractOutputText(payload: OpenAIResponsesPayload) {
-  if (typeof payload.output_text === "string" && payload.output_text.trim().length > 0) {
-    return payload.output_text;
-  }
-
-  for (const item of payload.output ?? []) {
-    for (const content of item.content ?? []) {
-      if (content.type === "output_text" && typeof content.text === "string") {
-        return content.text;
-      }
-    }
-  }
-
-  throw new Error("OpenAI craft response did not include structured output text.");
-}
-
-function buildLivePrompt(cmcUrl: string, coinSlug: string) {
+function buildCodexPrompt(cmcUrl: string, coinSlug: string) {
   return [
-    "You are the top-cmc-writer integration for an internal editorial dashboard.",
-    "Research and draft with only non-CoinMarketCap factual sources.",
-    "You may inspect the provided CoinMarketCap coin page URL for context, but do not cite CoinMarketCap, CMC community content, or CMC AI output as factual sources.",
-    "Return exactly three article variants and choose the best one.",
-    "Each variant must include variantNo, title, body, metaDescription, thumbnailPrompt, and sourceCount.",
-    "Keep tone publish-safe, non-manipulative, and compliant with CoinMarketCap community rules.",
+    "Use the top-cmc-writer skill for this task.",
+    "You are writing for the CMC Author Dashboard craft pipeline.",
+    "Analyze the provided CoinMarketCap coin page URL the same way an operator would in Codex.",
+    "Use only non-CoinMarketCap sources for factual support in the article output.",
+    "Return exactly three variants.",
+    "Every variant body_html must be ready to paste directly into WordPress.",
+    "Keep the output publish-safe and compliant with CoinMarketCap community rules.",
     `Coin slug: ${coinSlug}`,
     `Coin page URL: ${cmcUrl}`,
   ].join("\n");
 }
 
-async function craftLiveFromOpenAI(cmcUrl: string, coinSlug: string): Promise<CraftResult> {
-  const apiKey = requireLiveEnv("OPENAI_API_KEY", process.env.OPENAI_API_KEY);
-  const model =
-    process.env.CRAFT_MODEL?.trim() || process.env.OPENAI_MODEL?.trim() || "gpt-5.4-mini";
-
-  const response = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model,
-      input: buildLivePrompt(cmcUrl, coinSlug),
-      text: {
-        format: {
-          type: "json_schema",
-          name: "cmc_author_dashboard_craft_result",
-          schema: {
-            type: "object",
-            additionalProperties: false,
-            properties: {
-              variants: {
-                type: "array",
-                minItems: 3,
-                maxItems: 3,
-                items: {
-                  type: "object",
-                  additionalProperties: false,
-                  properties: {
-                    variantNo: { type: "integer" },
-                    title: { type: "string" },
-                    body: { type: "string" },
-                    metaDescription: { type: "string" },
-                    thumbnailPrompt: { type: "string" },
-                    sourceCount: { type: "integer" },
-                  },
-                  required: [
-                    "variantNo",
-                    "title",
-                    "body",
-                    "metaDescription",
-                    "thumbnailPrompt",
-                    "sourceCount",
-                  ],
-                },
-              },
-              selectedVariantNo: { type: "integer" },
-              bestAngle: { type: "string" },
-              whyBest: { type: "string" },
-              banRiskSummary: { type: "string" },
-            },
-            required: [
-              "variants",
-              "selectedVariantNo",
-              "bestAngle",
-              "whyBest",
-              "banRiskSummary",
-            ],
+function buildOutputSchema() {
+  return {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      variants: {
+        type: "array",
+        minItems: 3,
+        maxItems: 3,
+        items: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            variant_no: { type: "integer" },
+            title: { type: "string" },
+            body_html: { type: "string" },
+            meta_description: { type: "string" },
+            thumbnail_prompt: { type: "string" },
+            source_count: { type: "integer" },
           },
+          required: [
+            "variant_no",
+            "title",
+            "body_html",
+            "meta_description",
+            "thumbnail_prompt",
+            "source_count",
+          ],
         },
       },
-      tools: [{ type: "web_search_preview" }],
-    }),
+      selected_variant_no: { type: "integer" },
+      best_angle: { type: "string" },
+      why_best: { type: "string" },
+      ban_risk_summary: { type: "string" },
+    },
+    required: [
+      "variants",
+      "selected_variant_no",
+      "best_angle",
+      "why_best",
+      "ban_risk_summary",
+    ],
+  };
+}
+
+function toInternalCraftResult(raw: z.infer<typeof codexCraftResultSchema>): CraftResult {
+  return craftResultSchema.parse({
+    variants: raw.variants.map((variant) => ({
+      variantNo: variant.variant_no,
+      title: variant.title,
+      body: variant.body_html,
+      metaDescription: variant.meta_description,
+      thumbnailPrompt: variant.thumbnail_prompt,
+      sourceCount: variant.source_count,
+    })),
+    selectedVariantNo: raw.selected_variant_no,
+    bestAngle: raw.best_angle,
+    whyBest: raw.why_best,
+    banRiskSummary: raw.ban_risk_summary,
   });
+}
 
-  if (!response.ok) {
-    throw new Error(`OpenAI craft request failed with status ${response.status}.`);
+async function craftLiveWithCodexExec(cmcUrl: string, coinSlug: string): Promise<CraftResult> {
+  const codexBin = process.env.CODEX_BIN?.trim() || "codex";
+  const model = process.env.CRAFT_MODEL?.trim() || process.env.OPENAI_MODEL?.trim();
+  const tempDir = await mkdtemp(path.join(tmpdir(), "cmc-author-dashboard-"));
+  const schemaPath = path.join(tempDir, "craft-schema.json");
+  const outputPath = path.join(tempDir, "craft-output.json");
+
+  try {
+    await writeFile(schemaPath, JSON.stringify(buildOutputSchema(), null, 2), "utf8");
+
+    const args = [
+      "exec",
+      "--skip-git-repo-check",
+      "--output-last-message",
+      outputPath,
+      "--output-schema",
+      schemaPath,
+    ];
+
+    if (model) {
+      args.push("--model", model);
+    }
+
+    args.push(buildCodexPrompt(cmcUrl, coinSlug));
+
+    const stdout = await new Promise<string>((resolve, reject) => {
+      execFile(
+        codexBin,
+        args,
+        {
+          cwd: process.cwd(),
+          maxBuffer: 10 * 1024 * 1024,
+        },
+        (error, commandStdout) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+
+          resolve(commandStdout);
+        },
+      );
+    });
+
+    let rawOutput = "";
+
+    try {
+      rawOutput = await readFile(outputPath, "utf8");
+    } catch {
+      rawOutput = stdout;
+    }
+
+    if (!rawOutput.trim()) {
+      throw new Error("Codex did not produce a craft result.");
+    }
+
+    const parsed = codexCraftResultSchema.parse(JSON.parse(rawOutput));
+    return toInternalCraftResult(parsed);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown codex craft error.";
+    throw new Error(`Codex craft execution failed: ${message}`);
+  } finally {
+    await rm(tempDir, { recursive: true, force: true });
   }
-
-  const payload = (await response.json()) as OpenAIResponsesPayload;
-  const parsed = JSON.parse(extractOutputText(payload));
-  return craftResultSchema.parse(parsed);
 }
 
 export async function craftFromCoinPage(cmcUrl: string, coinSlug: string): Promise<CraftResult> {
@@ -208,5 +259,5 @@ export async function craftFromCoinPage(cmcUrl: string, coinSlug: string): Promi
     return toMockResult(coinSlug);
   }
 
-  return craftLiveFromOpenAI(cmcUrl, coinSlug);
+  return craftLiveWithCodexExec(cmcUrl, coinSlug);
 }

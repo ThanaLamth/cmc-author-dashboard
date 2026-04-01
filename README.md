@@ -14,7 +14,7 @@
 
 Current scope:
 - submit a CoinMarketCap coin page URL
-- run the craft pipeline
+- run the craft pipeline through `codex exec`
 - choose the best of three generated variants
 - create a WordPress draft
 - log the run to Google Sheets
@@ -65,7 +65,8 @@ npm run test:e2e
 Copy `.env.example` to `.env` and fill in:
 - database URL
 - integration mode (`mock` for local development, `live` for real publishing)
-- OpenAI API key and model for the craft step
+- Codex binary path if not available as `codex`
+- model override for the craft step if you want one
 - WordPress draft publishing credentials
 - Google Sheets target information
 - Telegram bot token and chat ID
@@ -74,13 +75,16 @@ Copy `.env.example` to `.env` and fill in:
 
 ### Runtime requirement
 
-For the current `v1`, the app does **not** require Codex skills at runtime.
+For the current `v1`, live craft **does** require Codex on the server.
 
-The live craft step currently calls the OpenAI Responses API directly from the app, so Ubuntu deployment only needs the normal app environment variables and processes.
+The live craft step calls `codex exec` from the worker process. That means the Ubuntu server needs:
+- `codex` installed
+- `codex login` completed for the runtime user
+- the `top-cmc-writer` skill installed for that same user
 
 ### Recommended skill for manual or Codex-assisted workflows
 
-Recommended companion skill:
+Required runtime skill:
 - `top-cmc-writer`
 
 Use it when you want to:
@@ -107,6 +111,15 @@ cp author-news/skills/top-cmc-writer/SKILL.md ~/.codex/skills/top-cmc-writer/SKI
 ```
 
 After that, Codex can use the skill by name in future sessions.
+
+### Live craft execution shape
+
+When you press `Craft` in the web app:
+- the worker runs `codex exec`
+- the prompt explicitly tells Codex to use `top-cmc-writer`
+- Codex returns strict JSON
+- each variant includes `body_html`, so the selected article can be pushed to WordPress directly
+- the app parses that JSON, stores the variants, then continues WordPress, Google Sheets, and Telegram steps
 
 ## Integration Modes
 
