@@ -65,9 +65,48 @@ npm run test:e2e
 Copy `.env.example` to `.env` and fill in:
 - database URL
 - integration mode (`mock` for local development, `live` for real publishing)
+- OpenAI API key and model for the craft step
 - WordPress draft publishing credentials
 - Google Sheets target information
 - Telegram bot token and chat ID
+
+## Skills
+
+### Runtime requirement
+
+For the current `v1`, the app does **not** require Codex skills at runtime.
+
+The live craft step currently calls the OpenAI Responses API directly from the app, so Ubuntu deployment only needs the normal app environment variables and processes.
+
+### Recommended skill for manual or Codex-assisted workflows
+
+Recommended companion skill:
+- `top-cmc-writer`
+
+Use it when you want to:
+- manually research a coin page in Codex
+- inspect why an article ranked in `Top`
+- draft article variants outside the dashboard
+- keep the same article heuristics as the app workflow
+
+### How to install `top-cmc-writer` on Ubuntu
+
+If you are also running Codex on the same Ubuntu machine, install the skill into your Codex skills directory:
+
+```bash
+mkdir -p ~/.codex/skills/top-cmc-writer
+cp /path/to/top-cmc-writer/SKILL.md ~/.codex/skills/top-cmc-writer/SKILL.md
+```
+
+If you want to pull it from your existing repo that already stores the skill:
+
+```bash
+git clone https://github.com/ThanaLamth/author-news.git
+mkdir -p ~/.codex/skills/top-cmc-writer
+cp author-news/skills/top-cmc-writer/SKILL.md ~/.codex/skills/top-cmc-writer/SKILL.md
+```
+
+After that, Codex can use the skill by name in future sessions.
 
 ## Integration Modes
 
