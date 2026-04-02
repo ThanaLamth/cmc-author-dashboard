@@ -210,6 +210,7 @@ async function craftLiveWithCodexExec(cmcUrl: string, coinSlug: string): Promise
 
     const args = [
       "exec",
+      "--dangerously-bypass-approvals-and-sandbox",
       "--skip-git-repo-check",
       "--output-last-message",
       outputPath,
