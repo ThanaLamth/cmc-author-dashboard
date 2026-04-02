@@ -9,6 +9,7 @@ import { JobStageTimeline } from "@/components/job-stage-timeline";
 import { LiveRefreshIndicator } from "@/components/live-refresh-indicator";
 import { RetryJobButton } from "@/components/retry-job-button";
 import { isActiveJobStatus } from "@/lib/jobs/activity";
+import { getWordPressSiteDefinition, isWordPressSiteKey } from "@/lib/integrations/wordpress-sites";
 
 function formatDateTime(value: string | null) {
   return value ? new Date(value).toLocaleString() : "-";
@@ -26,6 +27,7 @@ type JobDetail = {
   id: string;
   cmcUrl: string;
   coinSlug: string | null;
+  targetSite: string;
   status: string;
   currentStage: string | null;
   publishResult: {
@@ -80,6 +82,9 @@ export function JobDetailLive({ job }: { job: JobDetail }) {
   const publishedNow = job.publishedPosts.filter((post) => post.publishStatus === "publish").length;
   const scheduledCount = job.publishedPosts.filter((post) => post.publishStatus === "future").length;
   const queueLoggedCount = job.publishedPosts.filter((post) => post.sheetRowId).length;
+  const siteLabel = isWordPressSiteKey(job.targetSite)
+    ? getWordPressSiteDefinition(job.targetSite).label
+    : job.targetSite;
 
   useEffect(() => {
     if (!active) {
@@ -111,6 +116,8 @@ export function JobDetailLive({ job }: { job: JobDetail }) {
                 </h1>
                 <p className="text-sm text-[var(--text-secondary)]">{job.cmcUrl}</p>
                 <p className="text-sm text-[var(--text-secondary)]">
+                  Site: <span className="font-medium">{siteLabel}</span>
+                  {" · "}
                   Status: <span className="font-medium capitalize">{job.status}</span>
                   {" · "}
                   Stage: <span className="font-medium">{job.currentStage ?? "-"}</span>

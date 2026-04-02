@@ -11,6 +11,7 @@ model Job {
   id              String           @id @default(cuid())
   cmcUrl          String
   coinSlug        String?
+  targetSite      String           @default("cryptodailyalert")
   status          String           @default("queued")
   currentStage    String?
   errorMessage    String?

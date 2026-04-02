@@ -15,6 +15,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       id: job.id,
       cmcUrl: job.cmcUrl,
       coinSlug: job.coinSlug,
+      targetSite: job.targetSite,
       status: job.status,
       currentStage: job.currentStage,
       selectedArticle: job.selectedArticle

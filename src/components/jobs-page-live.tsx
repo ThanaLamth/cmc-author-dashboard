@@ -11,6 +11,7 @@ type JobRow = {
   id: string;
   cmcUrl: string;
   coinSlug: string | null;
+  targetSite: string;
   status: string;
   currentStage: string | null;
   createdAt: string;

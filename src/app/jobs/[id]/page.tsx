@@ -6,6 +6,7 @@ type JobDetailPayload = {
     id: string;
     cmcUrl: string;
     coinSlug: string | null;
+    targetSite: string;
     status: string;
     currentStage: string | null;
     publishResult: {
@@ -61,6 +62,7 @@ export default async function JobDetailPage({
         id: dbJob.id,
         cmcUrl: dbJob.cmcUrl,
         coinSlug: dbJob.coinSlug,
+        targetSite: dbJob.targetSite,
         status: dbJob.status,
         currentStage: dbJob.currentStage,
         selectedArticle: dbJob.selectedArticle

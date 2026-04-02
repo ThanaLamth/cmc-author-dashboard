@@ -1,6 +1,9 @@
-import { isMockMode, requireLiveEnv } from "@/lib/integrations/mode";
+import { isMockMode } from "@/lib/integrations/mode";
+import {
+  resolveWordPressSiteConfig,
+  type WordPressSiteKey,
+} from "@/lib/integrations/wordpress-sites";
 
-const CMC_CATEGORY_ID = 148;
 const RANK_MATH_NOINDEX_META = {
   rank_math_robots: ["noindex"],
 };
@@ -9,6 +12,7 @@ type PublishDraftInput = {
   title: string;
   body: string;
   metaDescription: string | null;
+  targetSite: WordPressSiteKey;
   status: "draft" | "publish" | "future";
   scheduledAt: string | null;
 };
@@ -53,12 +57,13 @@ export async function createWordPressPost(input: PublishDraftInput): Promise<Pub
     };
   }
 
-  const baseUrl = requireLiveEnv("WORDPRESS_BASE_URL", process.env.WORDPRESS_BASE_URL);
-  const username = requireLiveEnv("WORDPRESS_USERNAME", process.env.WORDPRESS_USERNAME);
-  const appPassword = requireLiveEnv("WORDPRESS_APP_PASSWORD", process.env.WORDPRESS_APP_PASSWORD);
+  const site = resolveWordPressSiteConfig(input.targetSite);
+  const baseUrl = site.baseUrl.replace(/\/$/, "");
+  const username = site.username;
+  const appPassword = site.appPassword;
 
   const auth = Buffer.from(`${username}:${appPassword}`).toString("base64");
-  const response = await fetch(`${baseUrl.replace(/\/$/, "")}/wp-json/wp/v2/posts`, {
+  const response = await fetch(`${baseUrl}/wp-json/wp/v2/posts`, {
     method: "POST",
     headers: {
       Authorization: `Basic ${auth}`,
@@ -69,7 +74,7 @@ export async function createWordPressPost(input: PublishDraftInput): Promise<Pub
       content: input.body,
       status: input.status,
       excerpt: input.metaDescription,
-      categories: [CMC_CATEGORY_ID],
+      categories: [site.cmcCategoryId],
       meta: RANK_MATH_NOINDEX_META,
       ...(input.scheduledAt ? { date_gmt: input.scheduledAt } : {}),
     }),
@@ -82,7 +87,7 @@ export async function createWordPressPost(input: PublishDraftInput): Promise<Pub
   const payload = (await response.json()) as { id: number; link: string };
   await applyRankMathNoindex({
     auth,
-    baseUrl: baseUrl.replace(/\/$/, ""),
+    baseUrl,
     wordpressPostId: payload.id,
   });
 

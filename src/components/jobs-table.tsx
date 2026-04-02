@@ -1,7 +1,10 @@
+import { getWordPressSiteDefinition, isWordPressSiteKey } from "@/lib/integrations/wordpress-sites";
+
 type JobRow = {
   id: string;
   cmcUrl: string;
   coinSlug: string | null;
+  targetSite: string;
   status: string;
   currentStage: string | null;
   createdAt: string;
@@ -29,6 +32,7 @@ export function JobsTable({ jobs }: { jobs: JobRow[] }) {
         <thead className="bg-[rgba(27,36,49,0.9)]">
           <tr className="text-left text-[var(--text-muted)]">
             <th className="px-4 py-3 font-medium">Coin</th>
+            <th className="px-4 py-3 font-medium">Site</th>
             <th className="px-4 py-3 font-medium">Status</th>
             <th className="px-4 py-3 font-medium">Stage</th>
             <th className="px-4 py-3 font-medium">Updated</th>
@@ -38,7 +42,7 @@ export function JobsTable({ jobs }: { jobs: JobRow[] }) {
         <tbody className="divide-y divide-[var(--border-subtle)]">
           {jobs.length === 0 ? (
             <tr>
-              <td className="px-4 py-8 text-[var(--text-muted)]" colSpan={5}>
+              <td className="px-4 py-8 text-[var(--text-muted)]" colSpan={6}>
                 No craft jobs yet.
               </td>
             </tr>
@@ -53,6 +57,11 @@ export function JobsTable({ jobs }: { jobs: JobRow[] }) {
                     {job.coinSlug ?? "Unknown"}
                   </div>
                   <div className="max-w-md truncate text-xs text-[var(--text-muted)]">{job.cmcUrl}</div>
+                </td>
+                <td className="px-4 py-3 text-[var(--text-secondary)]">
+                  {isWordPressSiteKey(job.targetSite)
+                    ? getWordPressSiteDefinition(job.targetSite).label
+                    : job.targetSite}
                 </td>
                 <td className="px-4 py-3">
                   <span

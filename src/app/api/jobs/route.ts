@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { db } from "@/lib/db";
+import { isWordPressSiteKey } from "@/lib/integrations/wordpress-sites";
 import { getCoinSlugFromCoinMarketCapUrl, parseCoinMarketCapCoinPageUrl } from "@/lib/jobs/url";
 import { listJobs } from "@/lib/jobs/queries";
 
@@ -12,6 +13,7 @@ export async function GET() {
       id: job.id,
       cmcUrl: job.cmcUrl,
       coinSlug: job.coinSlug,
+      targetSite: job.targetSite,
       status: job.status,
       currentStage: job.currentStage,
       createdAt: job.createdAt.toISOString(),
@@ -21,10 +23,16 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json().catch(() => null)) as { cmcUrl?: string } | null;
+  const body = (await request.json().catch(() => null)) as
+    | { cmcUrl?: string; targetSite?: string }
+    | null;
 
   if (!body?.cmcUrl) {
     return NextResponse.json({ error: "cmcUrl is required." }, { status: 400 });
+  }
+
+  if (!body?.targetSite || !isWordPressSiteKey(body.targetSite)) {
+    return NextResponse.json({ error: "targetSite is invalid." }, { status: 400 });
   }
 
   try {
@@ -35,6 +43,7 @@ export async function POST(request: Request) {
       data: {
         cmcUrl,
         coinSlug,
+        targetSite: body.targetSite,
         status: "queued",
         currentStage: "research",
       },

@@ -305,6 +305,7 @@ export async function runJobPipeline(jobId: string) {
                 title: variant.title,
                 body: variant.body,
                 metaDescription: variant.metaDescription,
+                targetSite: job.targetSite as "cryptodailyalert" | "trustscrypto" | "coinwy",
                 status: slot?.status ?? "future",
                 scheduledAt: slot?.scheduledAt ?? null,
               });

@@ -10,6 +10,7 @@ export default async function JobsPage() {
         id: job.id,
         cmcUrl: job.cmcUrl,
         coinSlug: job.coinSlug,
+        targetSite: job.targetSite,
         status: job.status,
         currentStage: job.currentStage,
         createdAt: job.createdAt.toISOString(),
