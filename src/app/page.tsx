@@ -26,7 +26,7 @@ export default function HomePage() {
                 </h1>
                 <p className="max-w-2xl text-base leading-8 text-[var(--text-secondary)]">
                   Research a coin page, generate four variants, push the publish queue to
-                  WordPress, and monitor what is live from one dark operator surface.
+                  WordPress, and monitor the full schedule from one dark operator surface.
                 </p>
               </div>
               <div className="mt-8 flex flex-wrap gap-3">
@@ -76,8 +76,8 @@ export default function HomePage() {
         <section className="grid gap-4 md:grid-cols-3">
           {[
             ["Research", "Observe CoinMarketCap feed behavior and gather non-CMC sources."],
-            ["Select", "Generate three variants and choose the best fit with ban-risk checks."],
-            ["Publish", "Create WordPress draft, log to Sheets, and send Telegram notice."],
+            ["Select", "Generate four variants and choose the best fit with ban-risk checks."],
+            ["Schedule", "Create four queued WordPress posts, log them to Sheets, and send Telegram notice."],
           ].map(([title, copy]) => (
             <div
               className="rounded-[1.75rem] border border-[var(--border-subtle)] bg-[rgba(21,29,40,0.86)] p-5 shadow-[var(--shadow-soft)]"

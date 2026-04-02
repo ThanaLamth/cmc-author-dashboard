@@ -22,14 +22,14 @@ describe("buildPublishQueue", () => {
 });
 
 describe("buildPublicationSchedule", () => {
-  it("publishes the first article immediately and schedules the rest at staggered offsets", () => {
+  it("schedules all four articles at staggered future offsets", () => {
     const baseDate = new Date("2026-04-01T00:00:00.000Z");
     const schedule = buildPublicationSchedule(baseDate);
 
     expect(schedule).toEqual([
-      { status: "publish", scheduledAt: null },
       { status: "future", scheduledAt: "2026-04-01T06:00:00Z" },
       { status: "future", scheduledAt: "2026-04-01T12:00:00Z" },
+      { status: "future", scheduledAt: "2026-04-01T18:00:00Z" },
       { status: "future", scheduledAt: "2026-04-02T00:00:00Z" },
     ]);
   });

@@ -16,8 +16,8 @@ type Publication = {
 };
 
 function formatScheduleLabel(status: string, scheduledAt: string | null) {
-  if (!scheduledAt || status === "publish") {
-    return "Publishes immediately";
+  if (!scheduledAt) {
+    return "Scheduled time pending";
   }
 
   return `Scheduled ${new Date(scheduledAt).toLocaleString()}`;

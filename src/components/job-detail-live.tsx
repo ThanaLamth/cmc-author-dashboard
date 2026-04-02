@@ -15,8 +15,8 @@ function formatDateTime(value: string | null) {
 }
 
 function formatQueueLabel(status: string, scheduledAt: string | null) {
-  if (!scheduledAt || status === "publish") {
-    return "Publish immediately";
+  if (!scheduledAt) {
+    return "Scheduled time pending";
   }
 
   return `Scheduled for ${formatDateTime(scheduledAt)}`;
@@ -137,7 +137,7 @@ export function JobDetailLive({ job }: { job: JobDetail }) {
             </div>
             <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-panel-soft)] p-4">
               <p className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                Published Now
+                Live Now
               </p>
               <p className="mt-2 text-2xl font-semibold text-[var(--text-primary)]">{publishedNow}</p>
             </div>
@@ -205,14 +205,14 @@ export function JobDetailLive({ job }: { job: JobDetail }) {
           <div className="mt-4 grid gap-4 md:grid-cols-3">
             <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-panel-soft)] p-4">
               <p className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                Immediate Post
+                Queue Lead
               </p>
               {job.publishResult?.wordpressUrl ? (
                 <a className="mt-2 block text-sm text-[var(--accent-primary)] underline underline-offset-4" href={job.publishResult.wordpressUrl}>
-                  Open published post
+                  Open first scheduled post
                 </a>
               ) : (
-                <p className="mt-2 text-sm text-[var(--text-secondary)]">Not published yet.</p>
+                <p className="mt-2 text-sm text-[var(--text-secondary)]">Queue not created yet.</p>
               )}
             </div>
             <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-panel-soft)] p-4">

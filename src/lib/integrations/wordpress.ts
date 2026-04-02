@@ -1,5 +1,10 @@
 import { isMockMode, requireLiveEnv } from "@/lib/integrations/mode";
 
+const CMC_CATEGORY_ID = 148;
+const RANK_MATH_NOINDEX_META = {
+  rank_math_robots: ["noindex"],
+};
+
 type PublishDraftInput = {
   title: string;
   body: string;
@@ -12,6 +17,33 @@ type PublishDraftResult = {
   wordpressPostId: string;
   wordpressUrl: string;
 };
+
+async function applyRankMathNoindex({
+  auth,
+  baseUrl,
+  wordpressPostId,
+}: {
+  auth: string;
+  baseUrl: string;
+  wordpressPostId: number;
+}) {
+  const response = await fetch(`${baseUrl}/wp-json/rankmath/v1/updateMeta`, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${auth}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      objectType: "post",
+      objectID: wordpressPostId,
+      meta: RANK_MATH_NOINDEX_META,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`WordPress Rank Math noindex update failed with status ${response.status}.`);
+  }
+}
 
 export async function createWordPressPost(input: PublishDraftInput): Promise<PublishDraftResult> {
   if (isMockMode()) {
@@ -37,6 +69,8 @@ export async function createWordPressPost(input: PublishDraftInput): Promise<Pub
       content: input.body,
       status: input.status,
       excerpt: input.metaDescription,
+      categories: [CMC_CATEGORY_ID],
+      meta: RANK_MATH_NOINDEX_META,
       ...(input.scheduledAt ? { date_gmt: input.scheduledAt } : {}),
     }),
   });
@@ -46,6 +80,11 @@ export async function createWordPressPost(input: PublishDraftInput): Promise<Pub
   }
 
   const payload = (await response.json()) as { id: number; link: string };
+  await applyRankMathNoindex({
+    auth,
+    baseUrl: baseUrl.replace(/\/$/, ""),
+    wordpressPostId: payload.id,
+  });
 
   return {
     wordpressPostId: String(payload.id),

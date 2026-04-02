@@ -4,8 +4,7 @@
 - create four variants
 - auto-select the best variant
 - generate SEO support assets
-- publish one WordPress post immediately
-- schedule three additional WordPress posts
+- schedule four WordPress posts
 - append all created posts to Google Sheets
 - notify Telegram with the publish queue
 
@@ -17,9 +16,8 @@ Current scope:
 - submit a CoinMarketCap coin page URL
 - run the craft pipeline through `codex exec`
 - generate four materially different article variants
-- choose the best variant for immediate publication
-- publish one post immediately
-- schedule the remaining three posts at `+6h`, `+12h`, and `+24h`
+- choose the best variant to lead the queue
+- schedule all four posts at `+6h`, `+12h`, `+18h`, and `+24h`
 - log all created WordPress posts to Google Sheets
 - send a Telegram notification with the full publish queue
 
@@ -123,8 +121,8 @@ When you press `Craft` in the web app:
 - Codex returns strict JSON
 - each variant includes `body_html`, so the selected article can be pushed to WordPress directly
 - the app parses that JSON, stores the variants, then:
-  - publishes the best variant immediately
-  - schedules the remaining three variants
+  - schedules the queue leader first
+  - schedules the remaining three variants behind it
   - logs every created WordPress post to Google Sheets
   - sends a Telegram summary of the full queue
 
