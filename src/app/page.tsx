@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { JobForm } from "@/components/job-form";
+import { LogoutButton } from "@/components/logout-button";
 import { getIntegrationMode } from "@/lib/integrations/mode";
 
 export default function HomePage() {
@@ -17,6 +18,7 @@ export default function HomePage() {
             <span className="rounded-full border border-[var(--border-strong)] bg-[var(--bg-panel)] px-3 py-1 text-xs font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)] shadow-[var(--shadow-soft)]">
               {integrationMode} mode
             </span>
+            <LogoutButton />
           </div>
           <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr] lg:items-start">
             <div className="rounded-[2rem] border border-[var(--border-subtle)] bg-[linear-gradient(180deg,rgba(21,29,40,0.98),rgba(15,22,32,0.96))] p-8 shadow-[var(--shadow-panel)]">

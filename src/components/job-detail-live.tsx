@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { ArticleVariantCard } from "@/components/article-variant-card";
 import { JobStageTimeline } from "@/components/job-stage-timeline";
 import { LiveRefreshIndicator } from "@/components/live-refresh-indicator";
+import { LogoutButton } from "@/components/logout-button";
 import { RetryJobButton } from "@/components/retry-job-button";
 import { isActiveJobStatus } from "@/lib/jobs/activity";
 import { getWordPressSiteDefinition, isWordPressSiteKey } from "@/lib/integrations/wordpress-sites";
@@ -126,6 +127,7 @@ export function JobDetailLive({ job }: { job: JobDetail }) {
               <LiveRefreshIndicator enabled={active} refreshing={isPending} updatedAt={lastUpdatedAt} />
             </div>
             <div className="flex flex-wrap items-center gap-3">
+              <LogoutButton />
               <Link
                 className="inline-flex h-11 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[var(--bg-panel)] px-4 text-sm font-medium text-[var(--text-primary)] transition hover:border-[var(--accent-primary)] hover:bg-[var(--bg-panel-soft)]"
                 href="/"

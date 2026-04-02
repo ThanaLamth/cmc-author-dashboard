@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import { LiveRefreshIndicator } from "@/components/live-refresh-indicator";
+import { LogoutButton } from "@/components/logout-button";
 import { JobsTable } from "@/components/jobs-table";
 import { shouldPollJobs } from "@/lib/jobs/activity";
 
@@ -51,7 +52,10 @@ export function JobsPageLive({ jobs }: { jobs: JobRow[] }) {
               Craft history
             </h1>
           </div>
-          <LiveRefreshIndicator enabled={active} refreshing={isPending} updatedAt={lastUpdatedAt} />
+          <div className="flex flex-wrap items-center gap-3">
+            <LiveRefreshIndicator enabled={active} refreshing={isPending} updatedAt={lastUpdatedAt} />
+            <LogoutButton />
+          </div>
         </div>
         <JobsTable jobs={jobs} />
       </div>
