@@ -19,6 +19,7 @@
 
 # production
 /build
+.worktrees/
 
 # local database
 /prisma/dev.db
