@@ -8,6 +8,20 @@ type JobRow = {
   updatedAt: string;
 };
 
+function statusBadgeClasses(status: string) {
+  switch (status) {
+    case "completed":
+      return "bg-emerald-100 text-emerald-900";
+    case "failed":
+    case "partial_failed":
+      return "bg-red-100 text-red-900";
+    case "running":
+      return "bg-blue-100 text-blue-900";
+    default:
+      return "bg-amber-100 text-amber-900";
+  }
+}
+
 export function JobsTable({ jobs }: { jobs: JobRow[] }) {
   return (
     <div className="overflow-hidden rounded-3xl border border-black/10 bg-white shadow-sm">
@@ -35,7 +49,13 @@ export function JobsTable({ jobs }: { jobs: JobRow[] }) {
                   <div className="font-medium text-zinc-900">{job.coinSlug ?? "Unknown"}</div>
                   <div className="max-w-md truncate text-xs text-zinc-500">{job.cmcUrl}</div>
                 </td>
-                <td className="px-4 py-3 capitalize text-zinc-800">{job.status}</td>
+                <td className="px-4 py-3">
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-medium capitalize ${statusBadgeClasses(job.status)}`}
+                  >
+                    {job.status}
+                  </span>
+                </td>
                 <td className="px-4 py-3 text-zinc-700">{job.currentStage ?? "-"}</td>
                 <td className="px-4 py-3 text-zinc-700">
                   {new Date(job.updatedAt).toLocaleString()}
