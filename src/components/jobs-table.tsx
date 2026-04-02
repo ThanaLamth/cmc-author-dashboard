@@ -11,23 +11,23 @@ type JobRow = {
 function statusBadgeClasses(status: string) {
   switch (status) {
     case "completed":
-      return "bg-emerald-100 text-emerald-900";
+      return "bg-[var(--status-success-bg)] text-[var(--status-success-text)]";
     case "failed":
     case "partial_failed":
-      return "bg-red-100 text-red-900";
+      return "bg-[var(--status-error-bg)] text-[var(--status-error-text)]";
     case "running":
-      return "bg-blue-100 text-blue-900";
+      return "bg-[var(--status-running-bg)] text-[var(--status-running-text)]";
     default:
-      return "bg-amber-100 text-amber-900";
+      return "bg-[var(--status-scheduled-bg)] text-[var(--status-scheduled-text)]";
   }
 }
 
 export function JobsTable({ jobs }: { jobs: JobRow[] }) {
   return (
-    <div className="overflow-hidden rounded-3xl border border-black/10 bg-white shadow-sm">
-      <table className="min-w-full divide-y divide-zinc-100 text-sm">
-        <thead className="bg-zinc-50">
-          <tr className="text-left text-zinc-600">
+    <div className="overflow-hidden rounded-[2rem] border border-[var(--border-subtle)] bg-[rgba(21,29,40,0.9)] shadow-[var(--shadow-panel)]">
+      <table className="min-w-full divide-y divide-[var(--border-subtle)] text-sm">
+        <thead className="bg-[rgba(27,36,49,0.9)]">
+          <tr className="text-left text-[var(--text-muted)]">
             <th className="px-4 py-3 font-medium">Coin</th>
             <th className="px-4 py-3 font-medium">Status</th>
             <th className="px-4 py-3 font-medium">Stage</th>
@@ -35,19 +35,24 @@ export function JobsTable({ jobs }: { jobs: JobRow[] }) {
             <th className="px-4 py-3 font-medium">Open</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-zinc-100">
+        <tbody className="divide-y divide-[var(--border-subtle)]">
           {jobs.length === 0 ? (
             <tr>
-              <td className="px-4 py-8 text-zinc-500" colSpan={5}>
+              <td className="px-4 py-8 text-[var(--text-muted)]" colSpan={5}>
                 No craft jobs yet.
               </td>
             </tr>
           ) : (
             jobs.map((job) => (
-              <tr key={job.id}>
+              <tr
+                className="transition hover:bg-[rgba(27,36,49,0.55)]"
+                key={job.id}
+              >
                 <td className="px-4 py-3">
-                  <div className="font-medium text-zinc-900">{job.coinSlug ?? "Unknown"}</div>
-                  <div className="max-w-md truncate text-xs text-zinc-500">{job.cmcUrl}</div>
+                  <div className="font-medium text-[var(--text-primary)]">
+                    {job.coinSlug ?? "Unknown"}
+                  </div>
+                  <div className="max-w-md truncate text-xs text-[var(--text-muted)]">{job.cmcUrl}</div>
                 </td>
                 <td className="px-4 py-3">
                   <span
@@ -56,12 +61,12 @@ export function JobsTable({ jobs }: { jobs: JobRow[] }) {
                     {job.status}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-zinc-700">{job.currentStage ?? "-"}</td>
-                <td className="px-4 py-3 text-zinc-700">
+                <td className="px-4 py-3 text-[var(--text-secondary)]">{job.currentStage ?? "-"}</td>
+                <td className="px-4 py-3 text-[var(--text-secondary)]">
                   {new Date(job.updatedAt).toLocaleString()}
                 </td>
                 <td className="px-4 py-3">
-                  <a className="text-zinc-950 underline" href={`/jobs/${job.id}`}>
+                  <a className="text-[var(--accent-primary)] underline underline-offset-4" href={`/jobs/${job.id}`}>
                     View
                   </a>
                 </td>

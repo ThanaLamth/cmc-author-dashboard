@@ -39,12 +39,16 @@ export function JobsPageLive({ jobs }: { jobs: JobRow[] }) {
   }, [active, router, startTransition]);
 
   return (
-    <main className="min-h-screen bg-zinc-100 px-6 py-16">
+    <main className="min-h-screen px-6 py-16">
       <div className="mx-auto max-w-6xl space-y-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div className="space-y-2">
-            <p className="text-sm font-medium uppercase tracking-[0.24em] text-zinc-500">Jobs</p>
-            <h1 className="text-4xl font-semibold tracking-tight text-zinc-950">Craft history</h1>
+            <p className="text-sm font-medium uppercase tracking-[0.24em] text-[var(--text-muted)]">
+              Jobs
+            </p>
+            <h1 className="text-4xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
+              Craft history
+            </h1>
           </div>
           <LiveRefreshIndicator enabled={active} refreshing={isPending} updatedAt={lastUpdatedAt} />
         </div>

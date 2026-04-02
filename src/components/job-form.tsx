@@ -37,30 +37,35 @@ export function JobForm() {
   }
 
   return (
-    <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
+    <section className="rounded-[2rem] border border-[var(--border-subtle)] bg-[linear-gradient(180deg,rgba(21,29,40,0.96),rgba(15,22,32,0.96))] p-6 shadow-[var(--shadow-panel)]">
       <div className="space-y-2">
-        <h2 className="text-xl font-semibold text-zinc-950">Craft From Coin Page</h2>
-        <p className="text-sm text-zinc-600">
+        <p className="text-xs font-medium uppercase tracking-[0.22em] text-[var(--text-muted)]">
+          Launch Craft
+        </p>
+        <h2 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
+          Craft From Coin Page
+        </h2>
+        <p className="text-sm leading-7 text-[var(--text-secondary)]">
           Paste a CoinMarketCap coin page URL and the worker will research, draft, publish a
           WordPress draft, log to Google Sheets, and send Telegram notification.
         </p>
       </div>
 
       <div className="mt-6 flex flex-col gap-3">
-        <label className="text-sm font-medium text-zinc-700" htmlFor="cmc-url">
+        <label className="text-sm font-medium text-[var(--text-secondary)]" htmlFor="cmc-url">
           CoinMarketCap coin page URL
         </label>
         <input
           id="cmc-url"
-          className="w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm text-zinc-950 outline-none ring-0 transition focus:border-zinc-400"
+          className="w-full rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-input)] px-4 py-3 text-sm text-[var(--text-primary)] outline-none ring-0 transition placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:shadow-[0_0_0_3px_rgba(56,189,248,0.18)]"
           onChange={(event) => setCmcUrl(event.target.value)}
           placeholder="https://coinmarketcap.com/currencies/xrp/"
           type="url"
           value={cmcUrl}
         />
-        {error ? <p className="text-sm text-red-600">{error}</p> : null}
+        {error ? <p className="text-sm text-[var(--status-error-text)]">{error}</p> : null}
         <button
-          className="inline-flex h-12 items-center justify-center rounded-2xl bg-zinc-950 px-5 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-400"
+          className="inline-flex h-12 items-center justify-center rounded-2xl border border-[var(--accent-primary)] bg-[var(--accent-primary)] px-5 text-sm font-semibold text-[#061018] transition hover:border-[var(--accent-primary-strong)] hover:bg-[var(--accent-primary-strong)] disabled:cursor-not-allowed disabled:border-[var(--border-subtle)] disabled:bg-[var(--bg-panel-soft)] disabled:text-[var(--text-muted)]"
           disabled={isPending || !cmcUrl.trim()}
           onClick={submit}
           type="button"

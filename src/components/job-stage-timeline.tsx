@@ -34,33 +34,33 @@ function formatDuration(startedAt: string | null, finishedAt: string | null) {
 
 export function JobStageTimeline({ stages }: { stages: StageRun[] }) {
   return (
-    <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-zinc-950">Stage Timeline</h2>
+    <section className="rounded-[2rem] border border-[var(--border-subtle)] bg-[rgba(21,29,40,0.9)] p-6 shadow-[var(--shadow-soft)]">
+      <h2 className="text-lg font-semibold text-[var(--text-primary)]">Stage Timeline</h2>
       <div className="mt-4 space-y-3">
         {stages.length === 0 ? (
-          <p className="text-sm text-zinc-500">No stage runs yet.</p>
+          <p className="text-sm text-[var(--text-muted)]">No stage runs yet.</p>
         ) : (
           stages.map((stage) => (
             <div
-              className="rounded-2xl border border-zinc-100 bg-zinc-50 p-4"
+              className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-panel-soft)] p-4"
               key={stage.id}
             >
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="font-medium text-zinc-900">{stage.stage}</p>
-                  <p className="text-xs text-zinc-500">Attempt {stage.attempt}</p>
+                  <p className="font-medium text-[var(--text-primary)]">{stage.stage}</p>
+                  <p className="text-xs text-[var(--text-muted)]">Attempt {stage.attempt}</p>
                 </div>
-                <span className="rounded-full bg-white px-3 py-1 text-xs font-medium capitalize text-zinc-700">
+                <span className="rounded-full bg-[rgba(255,255,255,0.06)] px-3 py-1 text-xs font-medium capitalize text-[var(--text-secondary)]">
                   {stage.status}
                 </span>
               </div>
-              <div className="mt-3 grid gap-3 text-xs text-zinc-500 md:grid-cols-3">
+              <div className="mt-3 grid gap-3 text-xs text-[var(--text-muted)] md:grid-cols-3">
                 <p>Started: {formatDateTime(stage.startedAt)}</p>
                 <p>Finished: {formatDateTime(stage.finishedAt)}</p>
                 <p>Duration: {formatDuration(stage.startedAt, stage.finishedAt) ?? "-"}</p>
               </div>
               {stage.errorText ? (
-                <p className="mt-3 text-sm text-red-600">{stage.errorText}</p>
+                <p className="mt-3 text-sm text-[var(--status-error-text)]">{stage.errorText}</p>
               ) : null}
             </div>
           ))

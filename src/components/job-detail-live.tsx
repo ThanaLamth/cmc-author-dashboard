@@ -97,20 +97,20 @@ export function JobDetailLive({ job }: { job: JobDetail }) {
   }, [active, router, startTransition]);
 
   return (
-    <main className="min-h-screen bg-zinc-100 px-6 py-16">
+    <main className="min-h-screen px-6 py-16">
       <div className="mx-auto max-w-6xl space-y-6">
-        <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
+        <section className="rounded-[2rem] border border-[var(--border-subtle)] bg-[linear-gradient(180deg,rgba(21,29,40,0.96),rgba(15,22,32,0.96))] p-6 shadow-[var(--shadow-panel)]">
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div className="space-y-3">
               <div className="space-y-2">
-                <p className="text-sm font-medium uppercase tracking-[0.24em] text-zinc-500">
+                <p className="text-sm font-medium uppercase tracking-[0.24em] text-[var(--text-muted)]">
                   Job {job.id}
                 </p>
-                <h1 className="text-3xl font-semibold tracking-tight text-zinc-950">
+                <h1 className="text-4xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
                   {job.coinSlug ?? "Unknown coin"}
                 </h1>
-                <p className="text-sm text-zinc-600">{job.cmcUrl}</p>
-                <p className="text-sm text-zinc-700">
+                <p className="text-sm text-[var(--text-secondary)]">{job.cmcUrl}</p>
+                <p className="text-sm text-[var(--text-secondary)]">
                   Status: <span className="font-medium capitalize">{job.status}</span>
                   {" · "}
                   Stage: <span className="font-medium">{job.currentStage ?? "-"}</span>
@@ -120,7 +120,7 @@ export function JobDetailLive({ job }: { job: JobDetail }) {
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <Link
-                className="inline-flex h-11 items-center justify-center rounded-2xl border border-zinc-300 px-4 text-sm font-medium text-zinc-900 transition hover:bg-zinc-50"
+                className="inline-flex h-11 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[var(--bg-panel)] px-4 text-sm font-medium text-[var(--text-primary)] transition hover:border-[var(--accent-primary)] hover:bg-[var(--bg-panel-soft)]"
                 href="/"
               >
                 Back to Home
@@ -129,29 +129,29 @@ export function JobDetailLive({ job }: { job: JobDetail }) {
             </div>
           </div>
           <div className="mt-6 grid gap-4 md:grid-cols-4">
-            <div className="rounded-2xl bg-zinc-50 p-4">
-              <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
+            <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-panel-soft)] p-4">
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 Variants
               </p>
-              <p className="mt-2 text-2xl font-semibold text-zinc-950">{job.variants.length}</p>
+              <p className="mt-2 text-2xl font-semibold text-[var(--text-primary)]">{job.variants.length}</p>
             </div>
-            <div className="rounded-2xl bg-zinc-50 p-4">
-              <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
+            <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-panel-soft)] p-4">
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 Published Now
               </p>
-              <p className="mt-2 text-2xl font-semibold text-zinc-950">{publishedNow}</p>
+              <p className="mt-2 text-2xl font-semibold text-[var(--text-primary)]">{publishedNow}</p>
             </div>
-            <div className="rounded-2xl bg-zinc-50 p-4">
-              <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
+            <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-panel-soft)] p-4">
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 Scheduled
               </p>
-              <p className="mt-2 text-2xl font-semibold text-zinc-950">{scheduledCount}</p>
+              <p className="mt-2 text-2xl font-semibold text-[var(--text-primary)]">{scheduledCount}</p>
             </div>
-            <div className="rounded-2xl bg-zinc-50 p-4">
-              <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
+            <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-panel-soft)] p-4">
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 Sheet Rows
               </p>
-              <p className="mt-2 text-2xl font-semibold text-zinc-950">{queueLoggedCount}</p>
+              <p className="mt-2 text-2xl font-semibold text-[var(--text-primary)]">{queueLoggedCount}</p>
             </div>
           </div>
         </section>
@@ -159,26 +159,26 @@ export function JobDetailLive({ job }: { job: JobDetail }) {
         <JobStageTimeline stages={job.stageRuns} />
 
         {job.selectedArticle ? (
-          <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-zinc-950">Selection Summary</h2>
+          <section className="rounded-[2rem] border border-[var(--border-subtle)] bg-[rgba(21,29,40,0.9)] p-6 shadow-[var(--shadow-soft)]">
+            <h2 className="text-lg font-semibold text-[var(--text-primary)]">Selection Summary</h2>
             <div className="mt-4 grid gap-4 md:grid-cols-3">
-              <div className="rounded-2xl bg-zinc-50 p-4">
-                <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
+              <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-panel-soft)] p-4">
+                <p className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-muted)]">
                   Best Angle
                 </p>
-                <p className="mt-2 text-sm text-zinc-800">{job.selectedArticle.bestAngle ?? "-"}</p>
+                <p className="mt-2 text-sm text-[var(--text-secondary)]">{job.selectedArticle.bestAngle ?? "-"}</p>
               </div>
-              <div className="rounded-2xl bg-zinc-50 p-4">
-                <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
+              <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-panel-soft)] p-4">
+                <p className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-muted)]">
                   Why Best
                 </p>
-                <p className="mt-2 text-sm text-zinc-800">{job.selectedArticle.whyBest ?? "-"}</p>
+                <p className="mt-2 text-sm text-[var(--text-secondary)]">{job.selectedArticle.whyBest ?? "-"}</p>
               </div>
-              <div className="rounded-2xl bg-zinc-50 p-4">
-                <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
+              <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-panel-soft)] p-4">
+                <p className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-muted)]">
                   Ban Risk Check
                 </p>
-                <p className="mt-2 text-sm text-zinc-800">
+                <p className="mt-2 text-sm text-[var(--text-secondary)]">
                   {job.selectedArticle.banRiskSummary ?? "-"}
                 </p>
               </div>
@@ -187,7 +187,7 @@ export function JobDetailLive({ job }: { job: JobDetail }) {
         ) : null}
 
         <section className="space-y-4">
-          <h2 className="text-lg font-semibold text-zinc-950">Variants</h2>
+          <h2 className="text-lg font-semibold text-[var(--text-primary)]">Variants</h2>
           <div className="grid gap-4 xl:grid-cols-2">
             {job.variants.map((variant) => (
               <ArticleVariantCard
@@ -200,70 +200,70 @@ export function JobDetailLive({ job }: { job: JobDetail }) {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-zinc-950">Publish Results</h2>
+        <section className="rounded-[2rem] border border-[var(--border-subtle)] bg-[rgba(21,29,40,0.9)] p-6 shadow-[var(--shadow-soft)]">
+          <h2 className="text-lg font-semibold text-[var(--text-primary)]">Publish Results</h2>
           <div className="mt-4 grid gap-4 md:grid-cols-3">
-            <div className="rounded-2xl bg-zinc-50 p-4">
-              <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
+            <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-panel-soft)] p-4">
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 Immediate Post
               </p>
               {job.publishResult?.wordpressUrl ? (
-                <a className="mt-2 block text-sm text-zinc-900 underline" href={job.publishResult.wordpressUrl}>
+                <a className="mt-2 block text-sm text-[var(--accent-primary)] underline underline-offset-4" href={job.publishResult.wordpressUrl}>
                   Open published post
                 </a>
               ) : (
-                <p className="mt-2 text-sm text-zinc-600">Not published yet.</p>
+                <p className="mt-2 text-sm text-[var(--text-secondary)]">Not published yet.</p>
               )}
             </div>
-            <div className="rounded-2xl bg-zinc-50 p-4">
-              <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
+            <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-panel-soft)] p-4">
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 Google Sheets
               </p>
-              <p className="mt-2 text-sm text-zinc-800">{job.publishResult?.sheetRowId ?? "-"}</p>
+              <p className="mt-2 text-sm text-[var(--text-secondary)]">{job.publishResult?.sheetRowId ?? "-"}</p>
             </div>
-            <div className="rounded-2xl bg-zinc-50 p-4">
-              <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
+            <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-panel-soft)] p-4">
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 Telegram
               </p>
-              <p className="mt-2 text-sm text-zinc-800">
+              <p className="mt-2 text-sm text-[var(--text-secondary)]">
                 {job.publishResult?.telegramMessageId ?? "-"}
               </p>
             </div>
           </div>
         </section>
 
-        <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-zinc-950">Publication Queue</h2>
+        <section className="rounded-[2rem] border border-[var(--border-subtle)] bg-[rgba(21,29,40,0.9)] p-6 shadow-[var(--shadow-soft)]">
+          <h2 className="text-lg font-semibold text-[var(--text-primary)]">Publication Queue</h2>
           <div className="mt-4 space-y-3">
             {job.publishedPosts.length ? (
               job.publishedPosts.map((post) => (
                 <div
                   key={`${post.variantNo}-${post.publishOrder}`}
-                  className="rounded-2xl border border-black/10 bg-zinc-50 p-4"
+                  className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-panel-soft)] p-4 shadow-[var(--shadow-soft)]"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
+                      <p className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-muted)]">
                         Slot #{post.publishOrder + 1}
                       </p>
-                      <p className="mt-1 text-sm font-medium text-zinc-900">
+                      <p className="mt-1 text-base font-medium text-[var(--text-primary)]">
                         {job.variants.find((variant) => variant.variantNo === post.variantNo)?.title ??
                           `Variant ${post.variantNo}`}
                       </p>
-                      <p className="mt-1 text-xs text-zinc-600">
+                      <p className="mt-1 text-xs text-[var(--text-secondary)]">
                         Variant {post.variantNo} · {formatQueueLabel(post.publishStatus, post.scheduledAt)}
                       </p>
                     </div>
-                    <span className="rounded-full bg-white px-3 py-1 text-xs font-medium capitalize text-zinc-700">
+                    <span className="rounded-full bg-[rgba(255,255,255,0.06)] px-3 py-1 text-xs font-medium capitalize text-[var(--text-secondary)]">
                       {post.publishStatus}
                     </span>
                   </div>
                   {post.wordpressUrl ? (
-                    <a className="mt-3 block text-sm text-zinc-900 underline" href={post.wordpressUrl}>
+                    <a className="mt-3 block text-sm text-[var(--accent-primary)] underline underline-offset-4" href={post.wordpressUrl}>
                       Open post
                     </a>
                   ) : null}
-                  <div className="mt-3 grid gap-2 text-xs text-zinc-600 md:grid-cols-3">
+                  <div className="mt-3 grid gap-2 text-xs text-[var(--text-muted)] md:grid-cols-3">
                     <p>WordPress ID: {post.wordpressPostId ?? "-"}</p>
                     <p>Sheet row: {post.sheetRowId ?? "-"}</p>
                     <p>Scheduled: {formatDateTime(post.scheduledAt)}</p>
@@ -271,7 +271,7 @@ export function JobDetailLive({ job }: { job: JobDetail }) {
                 </div>
               ))
             ) : (
-              <p className="text-sm text-zinc-600">No WordPress posts created yet.</p>
+              <p className="text-sm text-[var(--text-muted)]">No WordPress posts created yet.</p>
             )}
           </div>
         </section>

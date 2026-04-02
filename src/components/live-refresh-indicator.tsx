@@ -14,15 +14,17 @@ export function LiveRefreshIndicator({
   updatedAt?: string | null;
 }) {
   return (
-    <div className="inline-flex flex-wrap items-center gap-2 text-xs text-zinc-600">
+    <div className="inline-flex flex-wrap items-center gap-2 text-xs text-[var(--text-secondary)]">
       <span
         className={`rounded-full px-3 py-1 font-medium uppercase tracking-[0.12em] ${
-          enabled ? "bg-emerald-100 text-emerald-900" : "bg-zinc-100 text-zinc-600"
+          enabled
+            ? "bg-[var(--status-running-bg)] text-[var(--status-running-text)]"
+            : "bg-[var(--bg-panel)] text-[var(--text-muted)]"
         }`}
       >
         {enabled ? "Live refresh on" : "Live refresh off"}
       </span>
-      <span className="rounded-full bg-white px-3 py-1 text-zinc-500">
+      <span className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-panel)] px-3 py-1 text-[var(--text-muted)]">
         {refreshing ? "Refreshing..." : `Updated ${formatTime(updatedAt) ?? "-"}`}
       </span>
     </div>
