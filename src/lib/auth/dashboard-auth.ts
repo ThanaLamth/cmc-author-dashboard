@@ -26,6 +26,10 @@ export function getDashboardSessionSecret(env: NodeJS.ProcessEnv = process.env) 
   return env.DASHBOARD_SESSION_SECRET ?? "cmc-dashboard-dev-secret";
 }
 
+export function getDashboardCookieSecure(env: NodeJS.ProcessEnv = process.env) {
+  return env.DASHBOARD_COOKIE_SECURE?.trim().toLowerCase() === "true";
+}
+
 export function authenticateDashboardUser(
   users: Record<string, string>,
   username: string,

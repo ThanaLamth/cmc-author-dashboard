@@ -4,6 +4,7 @@ import {
   authenticateDashboardUser,
   createSessionToken,
   DASHBOARD_SESSION_COOKIE,
+  getDashboardCookieSecure,
   getDashboardSessionSecret,
   getDashboardUsers,
 } from "@/lib/auth/dashboard-auth";
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
     {
       httpOnly: true,
       sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
+      secure: getDashboardCookieSecure(),
       path: "/",
     },
   );

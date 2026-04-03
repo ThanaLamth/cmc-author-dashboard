@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   authenticateDashboardUser,
   createSessionToken,
+  getDashboardCookieSecure,
   parseDashboardUsers,
   verifySessionToken,
 } from "@/lib/auth/dashboard-auth";
@@ -33,5 +34,15 @@ describe("dashboard auth", () => {
 
     await expect(verifySessionToken(token, "super-secret")).resolves.toEqual({ username: "thana" });
     await expect(verifySessionToken(token, "wrong-secret")).resolves.toBeNull();
+  });
+
+  it("defaults dashboard cookie secure flag to false unless explicitly enabled", () => {
+    expect(getDashboardCookieSecure({} as NodeJS.ProcessEnv)).toBe(false);
+    expect(getDashboardCookieSecure({ DASHBOARD_COOKIE_SECURE: "false" } as NodeJS.ProcessEnv)).toBe(
+      false,
+    );
+    expect(getDashboardCookieSecure({ DASHBOARD_COOKIE_SECURE: "true" } as NodeJS.ProcessEnv)).toBe(
+      true,
+    );
   });
 });
