@@ -68,6 +68,8 @@ Copy `.env.example` to `.env` and fill in:
 - integration mode (`mock` for local development, `live` for real publishing)
 - Codex binary path if not available as `codex`
 - model override for the craft step if you want one
+- optional Flow image worker URL and bearer token for automatic featured images
+- optional Flow browser-worker settings if you want featured images generated from Google Flow
 - WordPress draft publishing credentials
 - Google Sheets target information
 - Telegram bot token and chat ID
@@ -82,6 +84,46 @@ The live craft step calls `codex exec` from the worker process. That means the U
 - `codex` installed
 - `codex login` completed for the runtime user
 - the `top-cmc-writer` skill installed for that same user
+
+## Optional: Google Flow featured-image worker
+
+If you want posts to receive a WordPress featured image generated from Google Flow, run the included Playwright worker separately from the main app.
+
+Required env for the worker:
+- `FLOW_PROJECT_URL`
+- `FLOW_STORAGE_STATE_PATH`
+- `FLOW_IMAGE_WORKER_PORT`
+- `FLOW_HEADLESS`
+- `FLOW_CREATE_TIMEOUT_MS`
+- `FLOW_NAV_TIMEOUT_MS`
+- optional `FLOW_IMAGE_WORKER_TOKEN`
+
+One-time session bootstrap:
+
+```bash
+npm run flow-save-session
+```
+
+This opens a real browser. Log in to Google, open the Flow project, then press Enter in the terminal to save Playwright storage state.
+
+Run the worker:
+
+```bash
+npm run flow-image-worker
+```
+
+Point the main dashboard worker at it:
+
+```bash
+FLOW_IMAGE_WORKER_URL="http://127.0.0.1:4319/generate"
+FLOW_IMAGE_WORKER_TOKEN="your-shared-secret"
+```
+
+The dashboard will then:
+- build the Flow prompt from the article title / thumbnail prompt
+- ask the Flow worker to generate the image
+- upload the image to WordPress media
+- set `featured_media` on the created post
 
 ### Recommended skill for manual or Codex-assisted workflows
 

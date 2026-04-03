@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createWordPressPost } from "@/lib/integrations/wordpress";
+import {
+  createWordPressPost,
+  uploadWordPressFeaturedImage,
+} from "@/lib/integrations/wordpress";
 
 describe("createWordPressPost", () => {
   const envBackup = { ...process.env };
@@ -66,6 +69,34 @@ describe("createWordPressPost", () => {
     });
   });
 
+  it("sends featured_media when a WordPress media ID is provided", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ id: 321, link: "https://example.com/posts/321" }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true }),
+      });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    await createWordPressPost({
+      title: "Featured post",
+      body: "<p>Hello</p>",
+      metaDescription: "Meta",
+      targetSite: "trustscrypto",
+      status: "publish",
+      scheduledAt: null,
+      featuredMediaId: 55,
+    });
+
+    const postBody = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
+    expect(postBody.featured_media).toBe(55);
+  });
+
   it("schedules a future post with date_gmt when status is future", async () => {
     const fetchMock = vi
       .fn()
@@ -121,5 +152,61 @@ describe("createWordPressPost", () => {
         scheduledAt: "2026-04-02T06:00:00Z",
       }),
     ).rejects.toThrow("WordPress Rank Math noindex update failed with status 500.");
+  });
+});
+
+describe("uploadWordPressFeaturedImage", () => {
+  const envBackup = { ...process.env };
+
+  beforeEach(() => {
+    process.env = {
+      ...envBackup,
+      INTEGRATION_MODE: "live",
+      WORDPRESS_TRUSTSCRYPTO_BASE_URL: "https://trustscrypto.com",
+      WORDPRESS_TRUSTSCRYPTO_USERNAME: "trusts-admin",
+      WORDPRESS_TRUSTSCRYPTO_APP_PASSWORD: "trusts-password",
+      WORDPRESS_COINWY_BASE_URL: "https://coinwy.com",
+      WORDPRESS_COINWY_USERNAME: "coinwy-admin",
+      WORDPRESS_COINWY_APP_PASSWORD: "coinwy-password",
+      WORDPRESS_BASE_URL: "https://cryptodailyalert.com",
+      WORDPRESS_USERNAME: "admin",
+      WORDPRESS_APP_PASSWORD: "app-password",
+    };
+  });
+
+  afterEach(() => {
+    process.env = { ...envBackup };
+    vi.restoreAllMocks();
+  });
+
+  it("uploads media and then patches alt text metadata", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ id: 777, source_url: "https://trustscrypto.com/uploads/xrp.png" }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ id: 777 }),
+      });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await uploadWordPressFeaturedImage({
+      altText: "XRP featured image",
+      buffer: Buffer.from("png-bytes"),
+      filename: "xrp.png",
+      mimeType: "image/png",
+      targetSite: "trustscrypto",
+      title: "XRP featured image",
+    });
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe("https://trustscrypto.com/wp-json/wp/v2/media");
+    expect(fetchMock.mock.calls[1]?.[0]).toBe("https://trustscrypto.com/wp-json/wp/v2/media/777");
+    expect(result).toEqual({
+      mediaId: 777,
+      sourceUrl: "https://trustscrypto.com/uploads/xrp.png",
+    });
   });
 });

@@ -2,7 +2,11 @@ import { db } from "@/lib/db";
 import { craftFromCoinPage } from "@/lib/integrations/top-cmc-writer";
 import { appendGoogleSheetsLog } from "@/lib/integrations/google-sheets";
 import { sendTelegramNotification } from "@/lib/integrations/telegram";
-import { createWordPressPost } from "@/lib/integrations/wordpress";
+import { generateFeaturedImage } from "@/lib/integrations/featured-image";
+import {
+  createWordPressPost,
+  uploadWordPressFeaturedImage,
+} from "@/lib/integrations/wordpress";
 import { JOB_STAGES, type JobStage } from "@/lib/jobs/constants";
 import { buildPublicationSchedule, buildPublishQueue } from "@/lib/jobs/publishing-plan";
 import { runStage } from "@/lib/jobs/stage-runner";
@@ -301,6 +305,21 @@ export async function runJobPipeline(jobId: string) {
               }
 
               const slot = schedule[index];
+              const featuredImage = await generateFeaturedImage({
+                title: variant.title,
+                thumbnailPrompt: variant.thumbnailPrompt,
+                coinSlug: job.coinSlug ?? null,
+              });
+              const featuredImageUpload = featuredImage
+                ? await uploadWordPressFeaturedImage({
+                    altText: variant.title,
+                    buffer: featuredImage.buffer,
+                    filename: featuredImage.filename,
+                    mimeType: featuredImage.mimeType,
+                    targetSite: job.targetSite as "cryptodailyalert" | "trustscrypto" | "coinwy",
+                    title: variant.title,
+                  })
+                : null;
               const wpPost = await createWordPressPost({
                 title: variant.title,
                 body: variant.body,
@@ -308,6 +327,7 @@ export async function runJobPipeline(jobId: string) {
                 targetSite: job.targetSite as "cryptodailyalert" | "trustscrypto" | "coinwy",
                 status: slot?.status ?? "future",
                 scheduledAt: slot?.scheduledAt ?? null,
+                featuredMediaId: featuredImageUpload?.mediaId ?? null,
               });
 
               const saved = await db.publishedPost.upsert({

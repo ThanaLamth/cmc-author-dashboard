@@ -1,0 +1,18 @@
+[Unit]
+Description=CMC Author Dashboard Flow Image Worker
+After=network.target
+
+[Service]
+Type=simple
+User=thana
+WorkingDirectory=/opt/cmc-author-dashboard
+Environment=NODE_ENV=production
+Environment=HOME=/home/thana
+Environment=PATH=/home/thana/.npm-global/bin:/usr/local/bin:/usr/bin:/bin
+EnvironmentFile=/opt/cmc-author-dashboard/.env
+ExecStart=/usr/bin/npm run flow-image-worker
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

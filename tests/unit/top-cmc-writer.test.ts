@@ -100,7 +100,7 @@ describe("craftFromCoinPage", () => {
         expect.any(String),
       ]),
       expect.objectContaining({
-        cwd: "/Users/thana/projects/cmc-author-dashboard",
+        cwd: process.cwd(),
         maxBuffer: expect.any(Number),
       }),
       expect.any(Function),
