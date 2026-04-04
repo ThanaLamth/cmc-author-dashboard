@@ -138,6 +138,15 @@ FLOW_BROWSER_CDP_URL="http://127.0.0.1:9222" \
 npm run flow-image-worker
 ```
 
+If that Chrome session is already logged in and inside the Flow editor, you can export a Playwright-compatible storage-state JSON from the live browser:
+
+```bash
+FLOW_PROJECT_URL="https://labs.google/fx/vi/tools/flow/project/YOUR_PROJECT_ID" \
+FLOW_BROWSER_CDP_URL="http://127.0.0.1:9222" \
+FLOW_STORAGE_STATE_PATH="./flow-storage-state.json" \
+npm run flow-export-session
+```
+
 ### Recommended skill for manual or Codex-assisted workflows
 
 Required runtime skill:

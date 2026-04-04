@@ -10,6 +10,7 @@
     "worker": "tsx src/worker/index.ts",
     "flow-image-worker": "tsx src/worker/flow-image-server.ts",
     "flow-save-session": "tsx src/worker/flow-save-session.ts",
+    "flow-export-session": "tsx src/worker/flow-export-session.ts",
     "test": "npm run test:unit && npm run test:integration",
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run --passWithNoTests tests/integration",

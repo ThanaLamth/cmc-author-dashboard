@@ -22,7 +22,7 @@ async function main() {
     await rl.question("");
 
     await mkdir(path.dirname(config.storageStatePath), { recursive: true });
-    await context.storageState({ path: config.storageStatePath });
+    await context.storageState({ path: config.storageStatePath, indexedDB: true });
     console.log(`Saved Flow storage state to ${config.storageStatePath}`);
   } finally {
     rl.close();
