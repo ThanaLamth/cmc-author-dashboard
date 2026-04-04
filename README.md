@@ -91,12 +91,15 @@ If you want posts to receive a WordPress featured image generated from Google Fl
 
 Required env for the worker:
 - `FLOW_PROJECT_URL`
-- `FLOW_STORAGE_STATE_PATH`
+- one of `FLOW_STORAGE_STATE_PATH`, `FLOW_BROWSER_USER_DATA_DIR`, or `FLOW_BROWSER_CDP_URL`
 - `FLOW_IMAGE_WORKER_PORT`
 - `FLOW_HEADLESS`
 - `FLOW_CREATE_TIMEOUT_MS`
 - `FLOW_NAV_TIMEOUT_MS`
 - optional `FLOW_IMAGE_WORKER_TOKEN`
+- optional `FLOW_BROWSER_CHANNEL`
+- optional `FLOW_BROWSER_PROFILE_DIRECTORY`
+- optional `FLOW_BROWSER_IGNORE_DEFAULT_ARGS`
 
 One-time session bootstrap:
 
@@ -124,6 +127,16 @@ The dashboard will then:
 - ask the Flow worker to generate the image
 - upload the image to WordPress media
 - set `featured_media` on the created post
+
+For local debugging when Flow only works in a manually opened Chrome session, you can attach the worker to that browser over CDP instead of launching a new Playwright browser:
+
+```bash
+open -na "Google Chrome" --args --remote-debugging-port=9222 --profile-directory="Profile 20"
+
+FLOW_PROJECT_URL="https://labs.google/fx/vi/tools/flow/project/YOUR_PROJECT_ID" \
+FLOW_BROWSER_CDP_URL="http://127.0.0.1:9222" \
+npm run flow-image-worker
+```
 
 ### Recommended skill for manual or Codex-assisted workflows
 

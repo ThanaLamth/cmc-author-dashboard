@@ -28,12 +28,17 @@ export type FlowGenerateResponse = z.infer<typeof flowGenerateResponseSchema>;
 
 export type FlowWorkerConfig = {
   bearerToken: string | null;
+  browserChannel: string | null;
+  browserCdpUrl: string | null;
+  browserIgnoreDefaultArgs: string[];
+  browserProfileDirectory: string | null;
+  browserUserDataDir: string | null;
   createTimeoutMs: number;
   headless: boolean;
   navTimeoutMs: number;
   port: number;
   projectUrl: string;
-  storageStatePath: string;
+  storageStatePath: string | null;
 };
 
 export type FlowImageResult = {
@@ -71,6 +76,17 @@ function parseNumberFlag(value: string | undefined, defaultValue: number) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : defaultValue;
 }
 
+function parseListFlag(value: string | undefined) {
+  if (!value) {
+    return [];
+  }
+
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 export function getFlowWorkerConfig(env: NodeJS.ProcessEnv = process.env): FlowWorkerConfig {
   const projectUrl = env.FLOW_PROJECT_URL?.trim();
 
@@ -78,15 +94,24 @@ export function getFlowWorkerConfig(env: NodeJS.ProcessEnv = process.env): FlowW
     throw new Error("FLOW_PROJECT_URL is required.");
   }
 
-  const storageStatePath = env.FLOW_STORAGE_STATE_PATH?.trim();
+  const storageStatePath = env.FLOW_STORAGE_STATE_PATH?.trim() || null;
+  const browserCdpUrl = env.FLOW_BROWSER_CDP_URL?.trim() || null;
+  const browserUserDataDir = env.FLOW_BROWSER_USER_DATA_DIR?.trim() || null;
 
-  if (!storageStatePath) {
-    throw new Error("FLOW_STORAGE_STATE_PATH is required.");
+  if (!storageStatePath && !browserUserDataDir && !browserCdpUrl) {
+    throw new Error(
+      "One of FLOW_STORAGE_STATE_PATH, FLOW_BROWSER_USER_DATA_DIR, or FLOW_BROWSER_CDP_URL is required.",
+    );
   }
 
   return {
     projectUrl,
     storageStatePath,
+    browserChannel: env.FLOW_BROWSER_CHANNEL?.trim() || null,
+    browserCdpUrl,
+    browserIgnoreDefaultArgs: parseListFlag(env.FLOW_BROWSER_IGNORE_DEFAULT_ARGS),
+    browserUserDataDir,
+    browserProfileDirectory: env.FLOW_BROWSER_PROFILE_DIRECTORY?.trim() || null,
     port: parseNumberFlag(env.FLOW_IMAGE_WORKER_PORT, 4319),
     headless: parseBooleanFlag(env.FLOW_HEADLESS, true),
     bearerToken: env.FLOW_IMAGE_WORKER_TOKEN?.trim() || null,
@@ -127,12 +152,32 @@ export async function generateImageViaFlow(
   config: FlowWorkerConfig,
   request: FlowWorkerRequest,
 ): Promise<FlowImageResult> {
-  const storageState = JSON.parse(await readFile(config.storageStatePath, "utf8"));
-  const browser = await chromium.launch({ headless: config.headless });
+  const launchOptions = {
+    headless: config.headless,
+    ...(config.browserChannel ? { channel: config.browserChannel as "chrome" } : {}),
+    ...(config.browserIgnoreDefaultArgs.length
+      ? { ignoreDefaultArgs: config.browserIgnoreDefaultArgs }
+      : {}),
+    ...(config.browserProfileDirectory
+      ? { args: [`--profile-directory=${config.browserProfileDirectory}`] }
+      : {}),
+  };
+
+  const browser = config.browserCdpUrl
+    ? await chromium.connectOverCDP(config.browserCdpUrl)
+    : config.browserUserDataDir
+    ? null
+    : await chromium.launch({ ...launchOptions });
 
   try {
-    const context = await browser.newContext({ storageState });
-    const page = await context.newPage();
+    const context = config.browserCdpUrl
+      ? (browser!.contexts()[0] ?? (await browser!.newContext()))
+      : config.browserUserDataDir
+        ? await chromium.launchPersistentContext(config.browserUserDataDir, launchOptions)
+        : await browser!.newContext({
+            storageState: JSON.parse(await readFile(config.storageStatePath!, "utf8")),
+          });
+    const page = context.pages()[0] ?? (await context.newPage());
     page.setDefaultNavigationTimeout(config.navTimeoutMs);
     page.setDefaultTimeout(config.createTimeoutMs);
 
@@ -177,6 +222,10 @@ export async function generateImageViaFlow(
       mimeType,
     };
   } finally {
-    await browser.close();
+    if (config.browserCdpUrl) {
+      await browser?.close();
+    } else {
+      await browser?.close();
+    }
   }
 }
