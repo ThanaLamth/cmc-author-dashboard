@@ -27,7 +27,7 @@ export default function HomePage() {
                   Run the publishing console for CoinMarketCap-driven drafts.
                 </h1>
                 <p className="max-w-2xl text-base leading-8 text-[var(--text-secondary)]">
-                  Research a coin page, generate four variants, push the publish queue to
+                  Research a coin page, generate one variant, then push the publish queue to
                   WordPress, and monitor the full schedule from one dark operator surface.
                 </p>
               </div>
@@ -78,7 +78,7 @@ export default function HomePage() {
         <section className="grid gap-4 md:grid-cols-3">
           {[
             ["Research", "Observe CoinMarketCap feed behavior and gather non-CMC sources."],
-            ["Select", "Generate four variants and choose the best fit with ban-risk checks."],
+            ["Select", "Generate one variant with ban-risk checks and publish-readiness checks."],
             ["Schedule", "Create four queued WordPress posts, log them to Sheets, and send Telegram notice."],
           ].map(([title, copy]) => (
             <div

@@ -19,7 +19,7 @@ const codexVariantSchema = z.object({
 });
 
 const codexCraftResultSchema = z.object({
-  variants: z.array(codexVariantSchema).length(4),
+  variants: z.array(codexVariantSchema).length(1),
   selected_variant_no: z.number().int().positive(),
   best_angle: z.string().min(1),
   why_best: z.string().min(1),
@@ -36,7 +36,7 @@ const craftVariantSchema = z.object({
 });
 
 const craftResultSchema = z.object({
-  variants: z.array(craftVariantSchema).length(4),
+  variants: z.array(craftVariantSchema).length(1),
   selectedVariantNo: z.number().int().positive(),
   bestAngle: z.string().min(1),
   whyBest: z.string().min(1),
@@ -74,7 +74,7 @@ function toBody(coinSlug: string, variantNo: number) {
 
   return `<p>${readable} is being evaluated through the lens of ${
     angles[variantNo - 1] ?? angles[0]
-  }.</p><p>This draft is a placeholder craft result for the dashboard MVP. Replace the adapter with the full top-cmc-writer orchestration to generate production-grade article research, source-backed analysis, and platform-safe copy.</p><p>For the current MVP, the worker produces three variants, scores them, and selects the strongest option for publishing workflow tests. The final production integration should preserve non-CMC sourcing rules, ban-risk checks, and CoinMarketCap-safe tone controls.</p>`;
+  }.</p><p>This draft is a placeholder craft result for the dashboard MVP. Replace the adapter with the full top-cmc-writer orchestration to generate production-grade article research, source-backed analysis, and platform-safe copy.</p><p>For the current MVP, the worker produces one variant and sends it forward for publishing workflow tests. The final production integration should preserve non-CMC sourcing rules, ban-risk checks, and CoinMarketCap-safe tone controls.</p>`;
 }
 
 function toMetaDescription(coinSlug: string, variantNo: number) {
@@ -86,7 +86,7 @@ function toThumbnailPrompt(coinSlug: string, variantNo: number) {
 }
 
 function toMockResult(coinSlug: string): CraftResult {
-  const variants = [1, 2, 3, 4].map((variantNo) => ({
+  const variants = [1].map((variantNo) => ({
     variantNo,
     title: toHeadline(coinSlug, variantNo),
     body: toBody(coinSlug, variantNo),
@@ -120,7 +120,7 @@ function buildCodexPrompt(cmcUrl: string, coinSlug: string) {
     "Use only non-CoinMarketCap sources for factual support in the article output.",
     "Do not include any source URL, citation, or hyperlink containing the string coinmarketcap anywhere in body_html.",
     "Do not default to bearish, negative, bullish, or promotional framing. Optimize for pattern-fit, source strength, and publish safety.",
-    "Return exactly four variants.",
+    "Return exactly one variant.",
     "Every variant body_html must be ready to paste directly into WordPress.",
     "Keep the output publish-safe and compliant with CoinMarketCap community rules.",
     `Coin slug: ${coinSlug}`,
@@ -135,8 +135,8 @@ function buildOutputSchema() {
     properties: {
       variants: {
         type: "array",
-        minItems: 4,
-        maxItems: 4,
+        minItems: 1,
+        maxItems: 1,
         items: {
           type: "object",
           additionalProperties: false,

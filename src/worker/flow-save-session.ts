@@ -21,9 +21,14 @@ async function main() {
     console.log(`When the project page is fully ready, press Enter to save session to ${config.storageStatePath}`);
     await rl.question("");
 
-    await mkdir(path.dirname(config.storageStatePath), { recursive: true });
-    await context.storageState({ path: config.storageStatePath, indexedDB: true });
-    console.log(`Saved Flow storage state to ${config.storageStatePath}`);
+    const storageStatePath = config.storageStatePath;
+    if (!storageStatePath) {
+      throw new Error("FLOW_STORAGE_STATE_PATH is required to save browser session.");
+    }
+
+    await mkdir(path.dirname(storageStatePath), { recursive: true });
+    await context.storageState({ path: storageStatePath, indexedDB: true });
+    console.log(`Saved Flow storage state to ${storageStatePath}`);
   } finally {
     rl.close();
     await context.close();
