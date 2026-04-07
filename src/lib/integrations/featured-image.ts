@@ -37,12 +37,14 @@ Texture:
 Mood:
 Eye-catching, bold, high-volatility crypto news energy.`;
 
+const DEFAULT_USEAPI_GOOGLE_FLOW_URL = "https://api.useapi.net/v1/google-flow/images";
+
 export type GeneratedFeaturedImage = {
   buffer: Buffer;
   filename: string;
   mimeType: string;
   prompt: string;
-  source: "flow-worker";
+  source: "flow-worker" | "useapi-google-flow";
 };
 
 type GenerateFeaturedImageInput = {
@@ -57,6 +59,24 @@ type FlowWorkerResponse = {
   imageUrl?: string;
   mimeType?: string;
 };
+
+type UseApiImageResponse = {
+  jobId?: string;
+  media?: Array<{
+    image?: {
+      generatedImage?: {
+        fifeUrl?: string;
+      };
+    };
+  }>;
+  error?: unknown;
+};
+
+function toSafeFilename(coinSlug: string | null | undefined) {
+  return `${(coinSlug?.trim() || "featured-image")
+    .replace(/[^a-z0-9-]+/gi, "-")
+    .toLowerCase()}.png`;
+}
 
 export function buildFlowFeaturedImagePrompt(title: string, thumbnailPrompt: string | null) {
   const basePrompt = (thumbnailPrompt?.trim() || title.trim()).replace(/\s+/g, " ");
@@ -82,20 +102,64 @@ async function resolveImageBuffer(payload: FlowWorkerResponse) {
   throw new Error("Flow worker response did not include imageBase64 or imageUrl.");
 }
 
-export async function generateFeaturedImage(
+async function generateViaUseApi(
   input: GenerateFeaturedImageInput,
-): Promise<GeneratedFeaturedImage | null> {
-  if (isMockMode()) {
-    return null;
+  prompt: string,
+  useApiToken: string,
+): Promise<GeneratedFeaturedImage> {
+  const apiUrl = process.env.USEAPI_GOOGLE_FLOW_URL?.trim() || DEFAULT_USEAPI_GOOGLE_FLOW_URL;
+  const email = process.env.USEAPI_GOOGLE_FLOW_EMAIL?.trim();
+  const model = process.env.USEAPI_GOOGLE_FLOW_MODEL?.trim() || "imagen-4";
+  const aspectRatio = process.env.USEAPI_GOOGLE_FLOW_ASPECT_RATIO?.trim() || "16:9";
+
+  const countRaw = Number(process.env.USEAPI_GOOGLE_FLOW_COUNT);
+  const count = Number.isFinite(countRaw) && countRaw > 0 ? Math.min(Math.floor(countRaw), 4) : 1;
+
+  const response = await fetch(apiUrl, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${useApiToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      prompt,
+      model,
+      aspectRatio,
+      count,
+      ...(email ? { email } : {}),
+    }),
+  });
+
+  if (!response.ok) {
+    const bodyText = await response.text().catch(() => "");
+    throw new Error(
+      `UseAPI Google Flow request failed with status ${response.status}${bodyText ? `: ${bodyText}` : "."}`,
+    );
   }
 
-  const workerUrl = process.env.FLOW_IMAGE_WORKER_URL?.trim();
+  const payload = (await response.json()) as UseApiImageResponse;
+  const imageUrl = payload.media?.[0]?.image?.generatedImage?.fifeUrl?.trim();
 
-  if (!workerUrl) {
-    return null;
+  if (!imageUrl) {
+    throw new Error("UseAPI Google Flow response did not include generated image URL.");
   }
 
-  const prompt = buildFlowFeaturedImagePrompt(input.title, input.thumbnailPrompt);
+  const buffer = await resolveImageBuffer({ imageUrl });
+
+  return {
+    buffer,
+    filename: toSafeFilename(input.coinSlug),
+    mimeType: "image/png",
+    prompt,
+    source: "useapi-google-flow",
+  };
+}
+
+async function generateViaFlowWorker(
+  input: GenerateFeaturedImageInput,
+  prompt: string,
+  workerUrl: string,
+): Promise<GeneratedFeaturedImage> {
   const authToken = process.env.FLOW_IMAGE_WORKER_TOKEN?.trim();
   const response = await fetch(workerUrl, {
     method: "POST",
@@ -119,11 +183,40 @@ export async function generateFeaturedImage(
 
   return {
     buffer,
-    filename:
-      payload.filename?.trim() ||
-      `${(input.coinSlug?.trim() || "featured-image").replace(/[^a-z0-9-]+/gi, "-").toLowerCase()}.png`,
+    filename: payload.filename?.trim() || toSafeFilename(input.coinSlug),
     mimeType: payload.mimeType?.trim() || "image/png",
     prompt,
     source: "flow-worker",
   };
+}
+
+export async function generateFeaturedImage(
+  input: GenerateFeaturedImageInput,
+): Promise<GeneratedFeaturedImage | null> {
+  if (isMockMode()) {
+    return null;
+  }
+
+  const prompt = buildFlowFeaturedImagePrompt(input.title, input.thumbnailPrompt);
+  const workerUrl = process.env.FLOW_IMAGE_WORKER_URL?.trim();
+  const useApiToken = process.env.USEAPI_TOKEN?.trim();
+
+  if (useApiToken) {
+    try {
+      return await generateViaUseApi(input, prompt, useApiToken);
+    } catch (error) {
+      if (!workerUrl) {
+        throw error;
+      }
+
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`UseAPI Google Flow failed, falling back to FLOW_IMAGE_WORKER_URL: ${message}`);
+    }
+  }
+
+  if (!workerUrl) {
+    return null;
+  }
+
+  return generateViaFlowWorker(input, prompt, workerUrl);
 }
